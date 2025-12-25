@@ -95,3 +95,64 @@ SET released_qty = 900,
     updated_by = 502,
     update_by_role_id = 4
 WHERE id = 5002;
+
+UPDATE sales_order
+SET version = version + 1,
+    updated_by = 201,
+    update_by_role_id = 2
+WHERE id = 2001;
+
+
+UPDATE sales_order_line_detail
+SET price = 265.00,
+    updated_by = 401,
+    update_by_role_id = 3
+WHERE id = 4001;
+
+UPDATE sales_order_line_detail
+SET quantity = 1700,
+    updated_by = 402,
+    update_by_role_id = 3
+WHERE id = 4002;
+
+
+UPDATE sales_order_release_line
+SET released_qty = 750,
+    release_date = '2025-01-18',
+    updated_by = 501,
+    update_by_role_id = 4
+WHERE id = 5001;
+
+UPDATE sales_order_release_line
+SET released_qty = 950,
+    release_date = '2025-01-20',
+    updated_by = 502,
+    update_by_role_id = 4
+WHERE id = 5002;
+
+UPDATE sales_order
+SET version = version + 1,
+    updated_by = 201,
+    update_by_role_id = 2
+WHERE id = 2001;
+
+UPDATE sales_order_line_detail
+SET part_id = 501,          -- NEW PART
+    quantity = 1000,
+    price = 120.00,
+    updated_by = 401,
+    update_by_role_id = 3
+WHERE id = 4001;
+
+UPDATE sales_order_release_line
+SET released_qty = 500,
+    release_date = '2025-01-22',
+    updated_by = 501,
+    update_by_role_id = 4
+WHERE id = 5001;
+
+UPDATE sales_order_release_line
+SET released_qty = 650,
+    updated_by = 501,
+    update_by_role_id = 4
+WHERE id = 5001;

@@ -37,6 +37,7 @@ BEGIN
             'phone', NEW.phone,
             'is_active', NEW.is_active
         ),
+        null,
         NEW.updated_by,
         NEW.update_by_role_id
     );
@@ -66,6 +67,7 @@ BEGIN
             'description', NEW.description,
             'is_active', NEW.is_active
         ),
+        null,
         NEW.updated_by,
         NEW.update_by_role_id
     );
@@ -107,6 +109,7 @@ BEGIN
             'display_order', NEW.display_order,
             'source_name', NEW.source_name
         ),
+        null,
         NEW.updated_by,
         NEW.update_by_role_id
     );
@@ -136,6 +139,7 @@ BEGIN
             'customer_id', NEW.customer_id,
             'order_date', NEW.order_date
         ),
+        null,
         NEW.updated_by,
         NEW.update_by_role_id
     );
@@ -168,6 +172,7 @@ BEGIN
             'city', NEW.city,
             'country', NEW.country
         ),
+        null,
         NEW.updated_by,
         NEW.update_by_role_id
     );
@@ -181,7 +186,12 @@ AFTER UPDATE ON sales_order_line_detail
 FOR EACH ROW
 BEGIN
     DECLARE v_order_no VARCHAR(50);
-    SELECT order_no INTO v_order_no FROM sales_order WHERE id = NEW.sales_order_id;
+    DECLARE v_version INT;
+
+    SELECT order_no, version
+      INTO v_order_no, v_version
+    FROM sales_order
+    WHERE id = NEW.sales_order_id;
 
     CALL Sproc_Audit_Generic_Update(
         'sales_order',
@@ -200,6 +210,10 @@ BEGIN
             'quantity', NEW.quantity,
             'price', NEW.price
         ),
+        JSON_OBJECT(              
+            'part_id', NEW.part_id,
+            'sales_order_version', v_version
+        ),
         NEW.updated_by,
         NEW.update_by_role_id
     );
@@ -212,18 +226,24 @@ CREATE TRIGGER trg_audit_sales_order_release
 AFTER UPDATE ON sales_order_release_line
 FOR EACH ROW
 BEGIN
-    DECLARE v_sales_order_id BIGINT;
+    DECLARE v_so_id BIGINT;
+    DECLARE v_part_id BIGINT;
+    DECLARE v_version INT;
     DECLARE v_order_no VARCHAR(50);
 
-    SELECT sales_order_id INTO v_sales_order_id
-    FROM sales_order_line_detail WHERE id = NEW.line_detail_id;
+    SELECT l.sales_order_id, l.part_id
+      INTO v_so_id, v_part_id
+    FROM sales_order_line_detail l
+    WHERE l.id = NEW.line_detail_id;
 
-    SELECT order_no INTO v_order_no
-    FROM sales_order WHERE id = v_sales_order_id;
+    SELECT order_no, version
+      INTO v_order_no, v_version
+    FROM sales_order
+    WHERE id = v_so_id;
 
     CALL Sproc_Audit_Generic_Update(
         'sales_order',
-        v_sales_order_id,
+        v_so_id,
         'sales_order_release_line',
         NEW.id,
         2,
@@ -237,6 +257,10 @@ BEGIN
             'release_no', NEW.release_no,
             'released_qty', NEW.released_qty,
             'release_date', NEW.release_date
+        ),
+        JSON_OBJECT(                      -- ✅ CONTEXT
+            'part_id', v_part_id,
+            'sales_order_version', v_version
         ),
         NEW.updated_by,
         NEW.update_by_role_id

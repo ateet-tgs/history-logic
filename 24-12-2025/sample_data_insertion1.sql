@@ -32,7 +32,7 @@ VALUES
 (507, 'TRANS-BC547', 'BC547 Transistor', 'NPN General Purpose Transistor', 1, 1, 1),
 (508, 'REG-LM7805', 'LM7805 Voltage Regulator', '5V Linear Voltage Regulator', 1, 1, 1),
 (509, 'IC-ESP32-WROOM', 'ESP32-WROOM Module', 'Wi-Fi and Bluetooth MCU Module', 1, 1, 1),
-(510, 'CON-USB-TYPEC', 'USB Type-C Connector', 'USB Type-C Female PCB Connector', 1, 1, 1)
+(510, 'CON-USB-TYPEC', 'USB Type-C Connector', 'USB Type-C Female PCB Connector', 1, 1, 1);
 
 
 INSERT INTO sales_order

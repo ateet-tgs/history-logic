@@ -95,7 +95,7 @@ VALUES
 -- Context: Sales Order Version
 (
     'sales_order_line_detail',
-    'version',
+    'sales_order_version',
     0,
     'sales_order',
     'id',
