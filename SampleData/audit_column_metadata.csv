@@ -1,0 +1,17 @@
+id,tableName,colName,isForeignKey,refTable,refPK,refDisplayColumn
+1,SalesOrder,status,0,NULL,NULL,NULL
+2,SalesOrder,customerName,0,NULL,NULL,NULL
+3,sales_order_address,city,0,NULL,NULL,NULL
+4,sales_order_address,country,0,NULL,NULL,NULL
+5,SalesOrderLineDetail,productCode,0,NULL,NULL,NULL
+6,SalesOrderLineDetail,quantity,0,NULL,NULL,NULL
+7,SalesOrderReleaseLine,releasedQty,0,NULL,NULL,NULL
+8,rfq_rohsmst,name,0,NULL,NULL,NULL
+9,rfq_rohsmst,description,0,NULL,NULL,NULL
+10,rfq_rohsmst,isActive,0,NULL,NULL,NULL
+11,rfq_rohsmst,refMainCategoryID,1,rfq_rohs_main_categorymst,id,name
+12,rfq_rohsmst,refParentID,1,rfq_rohsmst,id,name
+13,rfq_rohsmst,displayOrder,0,NULL,NULL,NULL
+14,rfq_rohsmst,systemGenerated,0,NULL,NULL,NULL
+15,rfq_rohsmst,rohsIcon,0,NULL,NULL,NULL
+16,rfq_rohsmst,sourceName,0,NULL,NULL,NULL

@@ -1,0 +1,27 @@
+INSERT INTO audit_column_metadata
+(table_name, col_name, is_foreign_key, ref_table, ref_pk, ref_display_column)
+VALUES
+('sales_order', 'status', 0, NULL, NULL, NULL),
+('sales_order', 'customer_name', 0, NULL, NULL, NULL),
+
+-- Sales order address audit configuration
+('sales_order_address', 'city', 0, NULL, NULL, NULL),
+('sales_order_address', 'country', 0, NULL, NULL, NULL),
+
+-- Line detail audit configuration
+('sales_order_line_detail', 'product_code', 0, NULL, NULL, NULL),
+('sales_order_line_detail', 'quantity', 0, NULL, NULL, NULL),
+
+-- Release line audit configuration
+('sales_order_release_line', 'released_qty', 0, NULL, NULL, NULL),
+
+-- RoHS substance audit configuration with FK resolution
+('rohs_substance', 'name', 0, NULL, NULL, NULL),
+('rohs_substance', 'description', 0, NULL, NULL, NULL),
+('rohs_substance', 'is_active', 0, NULL, NULL, NULL),
+('rohs_substance', 'ref_main_category_id', 1, 'rohs_main_category', 'id', 'name'),
+('rohs_substance', 'ref_parent_id', 1, 'rohs_substance', 'id', 'name'),
+('rohs_substance', 'display_order', 0, NULL, NULL, NULL),
+('rohs_substance', 'system_generated', 0, NULL, NULL, NULL),
+('rohs_substance', 'rohs_icon', 0, NULL, NULL, NULL),
+('rohs_substance', 'source_name', 0, NULL, NULL, NULL);

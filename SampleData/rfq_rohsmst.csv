@@ -1,0 +1,4 @@
+id,name,description,isActive,createdBy,createdAt,updatedBy,updatedAt,deletedBy,deletedAt,isDeleted,systemGenerated,rohsIcon,refMainCategoryID,createByRoleId,updateByRoleId,deleteByRoleId,displayOrder,refParentID,sourceName,unqDate
+1,"ROHS 1","Description 1",1,admin,"2025-12-17 19:10:51",1,NULL,NULL,NULL,0,NULL,NULL,2,1,2,NULL,NULL,NULL,NULL,NULL
+2,"ROHS 2","Description 2",1,admin,"2025-12-17 19:10:51",1,NULL,NULL,NULL,0,NULL,NULL,1,1,2,NULL,NULL,3,NULL,NULL
+3,"ROHS 3","Description 3",1,admin,"2025-12-17 19:10:51",NULL,NULL,NULL,NULL,0,NULL,NULL,2,1,NULL,NULL,NULL,NULL,NULL,NULL

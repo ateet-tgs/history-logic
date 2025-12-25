@@ -1,0 +1,43 @@
+CREATE TRIGGER trg_audit_sales_order_release
+AFTER UPDATE ON sales_order_release_line
+FOR EACH ROW
+BEGIN
+    DECLARE v_sales_order_id BIGINT;
+    DECLARE v_order_no VARCHAR(50);
+
+    -- Retrieve parent order ID via line detail
+    SELECT sales_order_id
+    INTO v_sales_order_id
+    FROM sales_order_line_detail
+    WHERE id = NEW.line_detail_id;
+
+    -- Retrieve root order number for context
+    SELECT order_no
+    INTO v_order_no
+    FROM sales_order
+    WHERE id = v_sales_order_id;
+
+    -- Track released quantity changes
+    IF OLD.released_qty <> NEW.released_qty THEN
+        INSERT INTO dataentrychange_auditlog VALUES (
+            NULL,
+            'sales_order', v_sales_order_id,
+            'sales_order_release_line', NEW.id,
+            2, v_order_no,
+            'released_qty', OLD.released_qty, NEW.released_qty,
+            NOW(), NEW.updated_by, NEW.update_by_role_id
+        );
+    END IF;
+
+    -- Track release date changes
+    IF OLD.release_date <> NEW.release_date THEN
+        INSERT INTO dataentrychange_auditlog VALUES (
+            NULL,
+            'sales_order', v_sales_order_id,
+            'sales_order_release_line', NEW.id,
+            2, v_order_no,
+            'release_date', OLD.release_date, NEW.release_date,
+            NOW(), NEW.updated_by, NEW.update_by_role_id
+        );
+    END IF;
+END;

@@ -1,0 +1,53 @@
+Table: dataentrychange_auditlog
+Columns:
+
+ID int AI PK 
+
+-- new column                                   root_table_name varchar(100) 
+-- new column                                   root_ref_id bigint 
+
+
+Tablename varchar(100)                          table_name varchar(100) 
+RefTransID int                                  ref_trans_id bigint 
+Colname varchar(100)                            col_name varchar(100) 
+Oldval longtext                                 old_val longtext
+Newval longtext                                 new_val longtext
+
+
+-- new column                                   entity_level tinyint 
+-- new column                                   entity_display_ref varchar(255)  
+
+updatedAt datetime 
+Updatedby varchar(255) 
+createdBy varchar(255) 
+createdAt datetime 
+createByRoleId int 
+updateByRoleId int 
+deleteByRoleId int 
+
+-- mistry
+valueDataType varchar(30) 
+woVersion varchar(255) 
+opVersion varchar(255) 
+revision varchar(10)
+
+
+Table: dataentrychange_auditlog
+Columns:
+id bigint AI PK 
+root_table_name varchar(100) 
+root_ref_id bigint 
+
+table_name varchar(100) 
+ref_trans_id bigint 
+col_name varchar(100) 
+old_val longtext 
+new_val longtext 
+
+
+entity_level tinyint 
+entity_display_ref varchar(255) 
+
+updated_at datetime 
+updated_by bigint 
+update_by_role_id int

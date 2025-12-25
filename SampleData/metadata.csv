@@ -1,0 +1,15 @@
+ID,TableName,ColName,IsForeginKey,RefTable,RefPK,RefDisplayColumn,RefLabel
+1,rfq_rohsmst,name,0,NULL,NULL,NULL,583
+2,rfq_rohsmst,description,0,NULL,NULL,NULL,13
+3,rfq_rohsmst,isActive,0,NULL,NULL,NULL,301
+4,rfq_rohsmst,refMainCategoryID,1,rfq_rohs_main_categorymst,id,name,584
+5,rfq_rohsmst,refParentID,1,rfq_rohsmst,id,name,585
+6,rfq_rohsmst,displayOrder,0,NULL,NULL,NULL,139
+7,rfq_rohsmst,systemGenerated,0,NULL,NULL,NULL,59
+8,rfq_rohsmst,rohsIcon,0,NULL,NULL,NULL,582
+9,rfq_rohsmst,sourceName,0,NULL,NULL,NULL,583
+10,rfq_rohsmst,alias,1,component_fields_genericalias_mst,id,alias,586
+12,component_fields_genericalias_mst,alias,0,NULL,NULL,NULL,586
+13,rfq_rohsmst_peer,rohsID,1,rfq_rohsmst,ID,name,583
+14,rfq_rohsmst_peer,rohsPeerID,1,rfq_rohsmst,ID,name,587
+15,rfq_rohsmst,rohsPeerID,1,rfq_rohsmst_peer,id,id,587

@@ -1,0 +1,4 @@
+id,salesOrderId,productCode,quantity,price,updatedBy,updateByRoleId
+1,1,PRD-001,8,520.00,102,2
+2,2,PRD-101,5,500.00,101,1
+3,2,PRD-102,10,250.00,101,1

@@ -1,0 +1,36 @@
+CREATE TRIGGER trg_audit_sales_order_address
+AFTER UPDATE ON sales_order_address
+FOR EACH ROW
+BEGIN
+    DECLARE v_order_no VARCHAR(50);
+
+    -- Retrieve parent order number for context
+    SELECT order_no
+    INTO v_order_no
+    FROM sales_order
+    WHERE id = NEW.sales_order_id;
+
+    -- Track city changes
+    IF OLD.city <> NEW.city THEN
+        INSERT INTO dataentrychange_auditlog VALUES (
+            NULL,
+            'sales_order', NEW.sales_order_id,
+            'sales_order_address', NEW.id,
+            1, v_order_no,
+            'city', OLD.city, NEW.city,
+            NOW(), NEW.updated_by, NEW.update_by_role_id
+        );
+    END IF;
+
+    -- Track country changes
+    IF OLD.country <> NEW.country THEN
+        INSERT INTO dataentrychange_auditlog VALUES (
+            NULL,
+            'sales_order', NEW.sales_order_id,
+            'sales_order_address', NEW.id,
+            1, v_order_no,
+            'country', OLD.country, NEW.country,
+            NOW(), NEW.updated_by, NEW.update_by_role_id
+        );
+    END IF;
+END;

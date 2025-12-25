@@ -1,0 +1,718 @@
+CREATE TABLE dataentrychange_auditlog (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    -- ROOT CONTEXT (Top-level entity)
+    rootTableName VARCHAR(100) NOT NULL,
+    rootRefID BIGINT NOT NULL,
+
+    -- CURRENT ENTITY CONTEXT
+    tableName VARCHAR(100) NOT NULL,
+    refTransID BIGINT NOT NULL,
+    entityLevel TINYINT NOT NULL,
+    entityDisplayRef VARCHAR(255),
+
+    -- FIELD CONTEXT
+    colName VARCHAR(100),
+    oldVal LONGTEXT,
+    newVal LONGTEXT,
+
+    -- AUDIT INFO
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedBy BIGINT,
+    updateByRoleId INT,
+
+    INDEX idx_root (rootTableName, rootRefID),
+    INDEX idx_entity (tableName, refTransID),
+    INDEX idx_col (tableName, colName)
+);
+
+
+CREATE TABLE audit_column_metadata (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tableName VARCHAR(100) NOT NULL,
+    colName VARCHAR(100) NOT NULL,
+
+    isForeignKey TINYINT(1) DEFAULT 0,
+    refTable VARCHAR(100),
+    refPK VARCHAR(100),
+    refDisplayColumn VARCHAR(100),
+
+    UNIQUE KEY uq_table_col (tableName, colName)
+);
+
+
+CREATE TABLE SalesOrder (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    orderNo VARCHAR(50) NOT NULL,
+    customerName VARCHAR(100),
+    orderDate DATE,
+    status VARCHAR(20),
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedBy BIGINT,
+    updateByRoleId INT
+);
+
+
+CREATE TABLE Address (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    salesOrderId BIGINT NOT NULL,
+    addressType VARCHAR(20), -- Billing / Shipping
+    city VARCHAR(100),
+    country VARCHAR(100),
+    updatedBy BIGINT,
+    updateByRoleId INT,
+
+    CONSTRAINT fk_address_so
+        FOREIGN KEY (salesOrderId)
+        REFERENCES SalesOrder(id)
+);
+
+
+CREATE TABLE SalesOrderLineDetail (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    salesOrderId BIGINT NOT NULL,
+    productCode VARCHAR(50),
+    quantity INT,
+    price DECIMAL(10,2),
+    updatedBy BIGINT,
+    updateByRoleId INT,
+
+    CONSTRAINT fk_line_so
+        FOREIGN KEY (salesOrderId)
+        REFERENCES SalesOrder(id)
+);
+
+
+CREATE TABLE SalesOrderReleaseLine (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    lineDetailId BIGINT NOT NULL,
+    releaseNo VARCHAR(50),
+    releasedQty INT,
+    releaseDate DATE,
+    updatedBy BIGINT,
+    updateByRoleId INT,
+
+    CONSTRAINT fk_release_line
+        FOREIGN KEY (lineDetailId)
+        REFERENCES SalesOrderLineDetail(id)
+);
+
+
+
+INSERT INTO audit_column_metadata
+(tableName, colName, isForeignKey, refTable, refPK, refDisplayColumn)
+VALUES
+('SalesOrder', 'status', 0, NULL, NULL, NULL),
+('SalesOrder', 'customerName', 0, NULL, NULL, NULL),
+
+('Address', 'city', 0, NULL, NULL, NULL),
+('Address', 'country', 0, NULL, NULL, NULL),
+
+('SalesOrderLineDetail', 'productCode', 0, NULL, NULL, NULL),
+('SalesOrderLineDetail', 'quantity', 0, NULL, NULL, NULL),
+
+('SalesOrderReleaseLine', 'releasedQty', 0, NULL, NULL, NULL);
+
+
+DELIMITER $$
+
+CREATE TRIGGER trg_audit_salesorder
+AFTER UPDATE ON SalesOrder
+FOR EACH ROW
+BEGIN
+    -- status
+    IF OLD.status <> NEW.status THEN
+        INSERT INTO dataentrychange_auditlog (
+            rootTableName, rootRefID,
+            tableName, refTransID,
+            entityLevel, entityDisplayRef,
+            colName, oldVal, newVal,
+            updatedBy, updateByRoleId
+        )
+        VALUES (
+            'SalesOrder', NEW.id,
+            'SalesOrder', NEW.id,
+            0, NEW.orderNo,
+            'status', OLD.status, NEW.status,
+            NEW.updatedBy, NEW.updateByRoleId
+        );
+    END IF;
+
+    -- customerName
+    IF OLD.customerName <> NEW.customerName THEN
+        INSERT INTO dataentrychange_auditlog VALUES (
+            NULL,
+            'SalesOrder', NEW.id,
+            'SalesOrder', NEW.id,
+            0, NEW.orderNo,
+            'customerName', OLD.customerName, NEW.customerName,
+            NOW(), NEW.updatedBy, NEW.updateByRoleId
+        );
+    END IF;
+END$$
+
+DELIMITER ;
+
+
+DELIMITER $$
+
+CREATE TRIGGER trg_audit_address
+AFTER UPDATE ON Address
+FOR EACH ROW
+BEGIN
+    DECLARE v_orderNo VARCHAR(50);
+
+    SELECT orderNo
+    INTO v_orderNo
+    FROM SalesOrder
+    WHERE id = NEW.salesOrderId;
+
+    -- city
+    IF OLD.city <> NEW.city THEN
+        INSERT INTO dataentrychange_auditlog VALUES (
+            NULL,
+            'SalesOrder', NEW.salesOrderId,
+            'Address', NEW.id,
+            1, v_orderNo,
+            'city', OLD.city, NEW.city,
+            NOW(), NEW.updatedBy, NEW.updateByRoleId
+        );
+    END IF;
+
+    -- country
+    IF OLD.country <> NEW.country THEN
+        INSERT INTO dataentrychange_auditlog VALUES (
+            NULL,
+            'SalesOrder', NEW.salesOrderId,
+            'Address', NEW.id,
+            1, v_orderNo,
+            'country', OLD.country, NEW.country,
+            NOW(), NEW.updatedBy, NEW.updateByRoleId
+        );
+    END IF;
+END$$
+
+DELIMITER ;
+
+
+DELIMITER $$
+
+CREATE TRIGGER trg_audit_salesorder_line
+AFTER UPDATE ON SalesOrderLineDetail
+FOR EACH ROW
+BEGIN
+    DECLARE v_orderNo VARCHAR(50);
+
+    SELECT orderNo
+    INTO v_orderNo
+    FROM SalesOrder
+    WHERE id = NEW.salesOrderId;
+
+    -- quantity
+    IF OLD.quantity <> NEW.quantity THEN
+        INSERT INTO dataentrychange_auditlog VALUES (
+            NULL,
+            'SalesOrder', NEW.salesOrderId,
+            'SalesOrderLineDetail', NEW.id,
+            1, v_orderNo,
+            'quantity', OLD.quantity, NEW.quantity,
+            NOW(), NEW.updatedBy, NEW.updateByRoleId
+        );
+    END IF;
+
+    -- price
+    IF OLD.price <> NEW.price THEN
+        INSERT INTO dataentrychange_auditlog VALUES (
+            NULL,
+            'SalesOrder', NEW.salesOrderId,
+            'SalesOrderLineDetail', NEW.id,
+            1, v_orderNo,
+            'price', OLD.price, NEW.price,
+            NOW(), NEW.updatedBy, NEW.updateByRoleId
+        );
+    END IF;
+END$$
+
+DELIMITER ;
+
+
+DELIMITER $$
+
+CREATE TRIGGER trg_audit_salesorder_release
+AFTER UPDATE ON SalesOrderReleaseLine
+FOR EACH ROW
+BEGIN
+    DECLARE v_salesOrderId BIGINT;
+    DECLARE v_orderNo VARCHAR(50);
+
+    SELECT sod.salesOrderId
+    INTO v_salesOrderId
+    FROM SalesOrderLineDetail sod
+    WHERE sod.id = NEW.lineDetailId;
+
+    SELECT orderNo
+    INTO v_orderNo
+    FROM SalesOrder
+    WHERE id = v_salesOrderId;
+
+    -- releasedQty
+    IF OLD.releasedQty <> NEW.releasedQty THEN
+        INSERT INTO dataentrychange_auditlog VALUES (
+            NULL,
+            'SalesOrder', v_salesOrderId,
+            'SalesOrderReleaseLine', NEW.id,
+            2, v_orderNo,
+            'releasedQty', OLD.releasedQty, NEW.releasedQty,
+            NOW(), NEW.updatedBy, NEW.updateByRoleId
+        );
+    END IF;
+
+    -- releaseDate
+    IF OLD.releaseDate <> NEW.releaseDate THEN
+        INSERT INTO dataentrychange_auditlog VALUES (
+            NULL,
+            'SalesOrder', v_salesOrderId,
+            'SalesOrderReleaseLine', NEW.id,
+            2, v_orderNo,
+            'releaseDate', OLD.releaseDate, NEW.releaseDate,
+            NOW(), NEW.updatedBy, NEW.updateByRoleId
+        );
+    END IF;
+END$$
+
+DELIMITER ;
+
+
+INSERT INTO SalesOrder (orderNo, customerName, orderDate, status)
+VALUES ('SO-1001', 'ABC Corp', CURDATE(), 'NEW');
+
+INSERT INTO Address (salesOrderId, addressType, city, country)
+VALUES (1, 'Shipping', 'Mumbai', 'India');
+
+INSERT INTO SalesOrderLineDetail
+(salesOrderId, productCode, quantity, price)
+VALUES (1, 'PRD-001', 10, 250.00);
+
+
+UPDATE SalesOrder
+SET status = 'CONFIRMED', updatedBy = 101, updateByRoleId = 1
+WHERE id = 1;
+
+UPDATE SalesOrderLineDetail
+SET quantity = 15, updatedBy = 101, updateByRoleId = 1
+WHERE id = 1;
+
+
+INSERT INTO SalesOrder (orderNo, customerName, orderDate, status, updatedBy, updateByRoleId)
+VALUES ('SO-1002', 'XYZ Corp', CURDATE(), 'NEW', 101, 1);
+
+INSERT INTO Address (salesOrderId, addressType, city, country, updatedBy, updateByRoleId)
+VALUES 
+(2, 'Billing', 'Delhi', 'India', 101, 1),
+(2, 'Shipping', 'Bangalore', 'India', 101, 1);
+
+INSERT INTO SalesOrderLineDetail (salesOrderId, productCode, quantity, price, updatedBy, updateByRoleId)
+VALUES 
+(2, 'PRD-101', 5, 500.00, 101, 1),
+(2, 'PRD-102', 10, 250.00, 101, 1);
+
+INSERT INTO SalesOrderReleaseLine (lineDetailId, releaseNo, releasedQty, releaseDate, updatedBy, updateByRoleId)
+VALUES 
+(1, 'REL-001', 3, CURDATE(), 101, 1),
+(2, 'REL-002', 10, CURDATE(), 101, 1);
+
+UPDATE SalesOrder
+SET status = 'CONFIRMED', updatedBy = 102, updateByRoleId = 2
+WHERE id = 2;
+
+UPDATE Address
+SET city = 'Mumbai', updatedBy = 102, updateByRoleId = 2
+WHERE id = 1;  -- Billing Address
+
+UPDATE SalesOrderLineDetail
+SET quantity = 8, price = 520.00, updatedBy = 102, updateByRoleId = 2
+WHERE id = 1;
+
+UPDATE SalesOrderReleaseLine
+SET releasedQty = 4, releaseDate = DATE_ADD(CURDATE(), INTERVAL 1 DAY), 
+    updatedBy = 102, updateByRoleId = 2
+WHERE id = 1;
+
+CREATE TABLE rfq_rohs_main_categorymst (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50),
+    description VARCHAR(250),
+    isActive TINYINT,
+    createdBy VARCHAR(255),
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedBy VARCHAR(255),
+    updatedAt DATETIME,
+    deletedBy VARCHAR(255),
+    deletedAt DATETIME,
+    isDeleted TINYINT(1) DEFAULT 0,
+    createByRoleId INT,
+    updateByRoleId INT,
+    deleteByRoleId INT
+);
+
+
+CREATE TABLE rfq_rohsmst (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50),
+    description VARCHAR(250),
+    isActive TINYINT,
+    createdBy VARCHAR(255),
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedBy VARCHAR(255),
+    updatedAt DATETIME,
+    deletedBy VARCHAR(255),
+    deletedAt DATETIME,
+    isDeleted TINYINT(1) DEFAULT 0,
+    systemGenerated TINYINT,
+    rohsIcon VARCHAR(255),
+    refMainCategoryID INT,
+    createByRoleId INT,
+    updateByRoleId INT,
+    deleteByRoleId INT,
+    displayOrder DECIMAL(10,5),
+    refParentID INT,
+    sourceName VARCHAR(50),
+    unqDate DATETIME,
+
+    CONSTRAINT fk_rohsmst_maincategory FOREIGN KEY (refMainCategoryID)
+        REFERENCES rfq_rohs_main_categorymst(id)
+);
+
+
+INSERT INTO audit_column_metadata
+(tableName, colName, isForeignKey, refTable, refPK, refDisplayColumn)
+VALUES
+('rfq_rohsmst', 'name', 0, NULL, NULL, NULL),
+('rfq_rohsmst', 'description', 0, NULL, NULL, NULL),
+('rfq_rohsmst', 'isActive', 0, NULL, NULL, NULL),
+('rfq_rohsmst', 'refMainCategoryID', 1, 'rfq_rohs_main_categorymst', 'id', 'name'),
+('rfq_rohsmst', 'refParentID', 1, 'rfq_rohsmst', 'id', 'name'),
+('rfq_rohsmst', 'displayOrder', 0, NULL, NULL, NULL),
+('rfq_rohsmst', 'systemGenerated', 0, NULL, NULL, NULL),
+('rfq_rohsmst', 'rohsIcon', 0, NULL, NULL, NULL),
+('rfq_rohsmst', 'sourceName', 0, NULL, NULL, NULL);
+
+
+DELIMITER $$
+
+CREATE TRIGGER trg_audit_rfq_rohsmst
+AFTER UPDATE ON rfq_rohsmst
+FOR EACH ROW
+BEGIN
+    DECLARE v_mainCategoryName VARCHAR(50);
+    DECLARE v_parentName VARCHAR(50);
+
+    -- Get display values for FK columns
+    IF NEW.refMainCategoryID IS NOT NULL THEN
+        SELECT name INTO v_mainCategoryName
+        FROM rfq_rohs_main_categorymst
+        WHERE id = NEW.refMainCategoryID;
+    END IF;
+
+    IF NEW.refParentID IS NOT NULL THEN
+        SELECT name INTO v_parentName
+        FROM rfq_rohsmst
+        WHERE id = NEW.refParentID;
+    END IF;
+
+    -- Track name change
+    IF OLD.name <> NEW.name THEN
+        INSERT INTO dataentrychange_auditlog
+        (rootTableName, rootRefID, tableName, refTransID, entityLevel, entityDisplayRef, colName, oldVal, newVal, updatedBy, updateByRoleId)
+        VALUES ('rfq_rohsmst', NEW.id, 'rfq_rohsmst', NEW.id, 0, NEW.name, 'name', OLD.name, NEW.name, NEW.updatedBy, NEW.updateByRoleId);
+    END IF;
+
+    -- Track refMainCategoryID change
+    IF OLD.refMainCategoryID <> NEW.refMainCategoryID THEN
+        INSERT INTO dataentrychange_auditlog
+        (rootTableName, rootRefID, tableName, refTransID, entityLevel, entityDisplayRef, colName, oldVal, newVal, updatedBy, updateByRoleId)
+        VALUES ('rfq_rohsmst', NEW.id, 'rfq_rohsmst', NEW.id, 0, NEW.name, 'refMainCategoryID', OLD.refMainCategoryID, NEW.refMainCategoryID, NEW.updatedBy, NEW.updateByRoleId);
+    END IF;
+
+    -- Track refParentID change
+    IF OLD.refParentID <> NEW.refParentID THEN
+        INSERT INTO dataentrychange_auditlog
+        (rootTableName, rootRefID, tableName, refTransID, entityLevel, entityDisplayRef, colName, oldVal, newVal, updatedBy, updateByRoleId)
+        VALUES ('rfq_rohsmst', NEW.id, 'rfq_rohsmst', NEW.id, 0, NEW.name, 'refParentID', OLD.refParentID, NEW.refParentID, NEW.updatedBy, NEW.updateByRoleId);
+    END IF;
+END$$
+
+DELIMITER ;
+
+
+DELIMITER $$
+
+CREATE TRIGGER trg_audit_rfq_maincategory
+AFTER UPDATE ON rfq_rohs_main_categorymst
+FOR EACH ROW
+BEGIN
+    -- Track name change
+    IF OLD.name <> NEW.name THEN
+        INSERT INTO dataentrychange_auditlog
+        (rootTableName, rootRefID, tableName, refTransID, entityLevel, entityDisplayRef, colName, oldVal, newVal, updatedBy, updateByRoleId)
+        VALUES ('rfq_rohs_main_categorymst', NEW.id, 'rfq_rohs_main_categorymst', NEW.id, 0, NEW.name, 'name', OLD.name, NEW.name, NEW.updatedBy, NEW.updateByRoleId);
+    END IF;
+
+    -- Track isActive change
+    IF OLD.isActive <> NEW.isActive THEN
+        INSERT INTO dataentrychange_auditlog
+        (rootTableName, rootRefID, tableName, refTransID, entityLevel, entityDisplayRef, colName, oldVal, newVal, updatedBy, updateByRoleId)
+        VALUES ('rfq_rohs_main_categorymst', NEW.id, 'rfq_rohs_main_categorymst', NEW.id, 0, NEW.name, 'isActive', OLD.isActive, NEW.isActive, NEW.updatedBy, NEW.updateByRoleId);
+    END IF;
+END$$
+
+DELIMITER ;
+
+INSERT INTO rfq_rohs_main_categorymst (name, description, isActive, createdBy, createByRoleId)
+VALUES 
+('Category A', 'Main Category A', 1, 'admin', 1),
+('Category B', 'Main Category B', 1, 'admin', 1);
+
+INSERT INTO rfq_rohsmst
+(name, description, isActive, createdBy, createByRoleId, refMainCategoryID, refParentID)
+VALUES
+('ROHS 1', 'Description 1', 1, 'admin', 1, 1, NULL),
+('ROHS 2', 'Description 2', 1, 'admin', 1, 1, 1),
+('ROHS 3', 'Description 3', 1, 'admin', 1, 2, NULL);
+
+-- Change parent
+UPDATE rfq_rohsmst
+SET refParentID = 3, updatedBy = 1, updateByRoleId = 2
+WHERE id = 2;
+
+-- Change category
+UPDATE rfq_rohsmst
+SET refMainCategoryID = 2, updatedBy = 1, updateByRoleId = 2
+WHERE id = 1;
+
+
+SELECT 
+    a.rootTableName,
+    a.rootRefID,
+    a.tableName,
+    a.refTransID,
+    a.entityLevel,
+    a.entityDisplayRef,
+    a.colName,
+    a.oldVal,
+    a.newVal,
+    a.updatedAt,
+    a.updatedBy,
+    a.updateByRoleId,
+    
+    -- Nested / Child info
+    CASE 
+        WHEN a.tableName = 'Address' THEN CONCAT('Address: ', c.addressType, ', ', c.city, ', ', c.country)
+        WHEN a.tableName = 'SalesOrderLineDetail' THEN CONCAT('Line: ', l.productCode, ', Qty: ', l.quantity, ', Price: ', l.price)
+        WHEN a.tableName = 'SalesOrderReleaseLine' THEN CONCAT('Release: ', r.releaseNo, ', Qty: ', r.releasedQty)
+        ELSE NULL
+    END AS nestedInfo
+
+FROM dataentrychange_auditlog a
+LEFT JOIN Address c ON a.tableName='Address' AND a.refTransID = c.id
+LEFT JOIN SalesOrderLineDetail l ON a.tableName='SalesOrderLineDetail' AND a.refTransID = l.id
+LEFT JOIN SalesOrderReleaseLine r ON a.tableName='SalesOrderReleaseLine' AND a.refTransID = r.id
+WHERE a.rootTableName = 'SalesOrder'
+  AND a.rootRefID = 1
+ORDER BY a.updatedAt DESC;
+
+
+SELECT
+    a.rootTableName,
+    a.rootRefID,
+    a.tableName,
+    a.refTransID,
+    a.entityLevel,
+    a.entityDisplayRef,
+    a.colName,
+
+    -- Replace oldVal/newVal IDs with current values from FK tables
+    CASE 
+        WHEN a.colName = 'refMainCategoryID' THEN mc_old.name
+        WHEN a.colName = 'refParentID' THEN rp_old.name
+        ELSE a.oldVal
+    END AS oldValDisplay,
+
+    CASE 
+        WHEN a.colName = 'refMainCategoryID' THEN mc_new.name
+        WHEN a.colName = 'refParentID' THEN rp_new.name
+        ELSE a.newVal
+    END AS newValDisplay,
+
+    a.updatedAt,
+    a.updatedBy,
+    a.updateByRoleId
+
+FROM dataentrychange_auditlog a
+
+-- Join old values to FK tables
+LEFT JOIN rfq_rohs_main_categorymst mc_old 
+    ON a.tableName='rfq_rohsmst' 
+   AND a.colName='refMainCategoryID' 
+   AND a.oldVal = mc_old.id
+
+LEFT JOIN rfq_rohsmst rp_old 
+    ON a.tableName='rfq_rohsmst' 
+   AND a.colName='refParentID' 
+   AND a.oldVal = rp_old.id
+
+-- Join new values to FK tables
+LEFT JOIN rfq_rohs_main_categorymst mc_new 
+    ON a.tableName='rfq_rohsmst' 
+   AND a.colName='refMainCategoryID' 
+   AND a.newVal = mc_new.id
+
+LEFT JOIN rfq_rohsmst rp_new 
+    ON a.tableName='rfq_rohsmst' 
+   AND a.colName='refParentID' 
+   AND a.newVal = rp_new.id
+
+WHERE a.rootTableName = 'rfq_rohsmst'
+ORDER BY a.updatedAt DESC;
+
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `Sproc_Get_AuditHistory_WithFK_FAST`(
+    IN p_rootTableName VARCHAR(100),
+    IN p_rootRefID BIGINT
+)
+BEGIN
+    /* =====================================================
+       1. RAW AUDIT DATA
+    ===================================================== */
+    CREATE TEMPORARY TABLE tmp_audit_raw AS
+    SELECT 
+        a.id,
+        a.tableName,
+        a.colName,
+        a.oldVal,
+        a.newVal,
+        a.updatedAt,
+        a.updatedBy,
+        IFNULL(m.isForeignKey, 0) AS isFK,
+        m.refTable,
+        m.refPK,
+        m.refDisplayColumn
+    FROM dataentrychange_auditlog a
+    LEFT JOIN audit_column_metadata m
+           ON m.tableName = a.tableName
+          AND m.colName  = a.colName
+    WHERE a.rootTableName = p_rootTableName
+      AND a.rootRefID    = p_rootRefID;
+
+    /* =====================================================
+       2. FK VALUE POOL (DISTINCT)
+    ===================================================== */
+    CREATE TEMPORARY TABLE tmp_fk_ids (
+        refTable VARCHAR(100),
+        refPK VARCHAR(100),
+        refDisplayColumn VARCHAR(100),
+        refID BIGINT
+    );
+
+    INSERT INTO tmp_fk_ids
+    SELECT DISTINCT refTable, refPK, refDisplayColumn, oldVal
+    FROM tmp_audit_raw
+    WHERE isFK = 1 AND oldVal IS NOT NULL
+
+    UNION
+
+    SELECT DISTINCT refTable, refPK, refDisplayColumn, newVal
+    FROM tmp_audit_raw
+    WHERE isFK = 1 AND newVal IS NOT NULL;
+
+    /* =====================================================
+       3. FK RESOLUTION TABLE
+    ===================================================== */
+    CREATE TEMPORARY TABLE tmp_fk_display (
+        refTable VARCHAR(100),
+        refID BIGINT,
+        displayVal LONGTEXT
+    );
+
+    /* =====================================================
+       4. DYNAMIC FK LOOKUP (PER TABLE, NOT PER ROW)
+    ===================================================== */
+    BEGIN
+        DECLARE done INT DEFAULT 0;
+        DECLARE v_refTable VARCHAR(100);
+        DECLARE v_refPK VARCHAR(100);
+        DECLARE v_refDisplay VARCHAR(100);
+
+        DECLARE fk_cur CURSOR FOR
+            SELECT DISTINCT refTable, refPK, refDisplayColumn
+            FROM tmp_fk_ids;
+
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+        OPEN fk_cur;
+
+        fk_loop: LOOP
+            FETCH fk_cur INTO v_refTable, v_refPK, v_refDisplay;
+            IF done = 1 THEN LEAVE fk_loop; END IF;
+
+            SET @sql = CONCAT(
+                'INSERT INTO tmp_fk_display (refTable, refID, displayVal)
+                 SELECT ''', v_refTable, ''', ',
+                        v_refPK, ', ',
+                        v_refDisplay, '
+                 FROM ', v_refTable, '
+                 WHERE ', v_refPK, ' IN (
+                     SELECT refID FROM tmp_fk_ids
+                     WHERE refTable = ''', v_refTable, '''
+                 )'
+            );
+
+            PREPARE stmt FROM @sql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+        END LOOP;
+
+        CLOSE fk_cur;
+    END;
+
+    /* =====================================================
+       5. FINAL RESULT (SET-BASED JOIN)
+    ===================================================== */
+    SELECT
+        r.id,
+        r.tableName,
+        r.colName,
+
+        CASE
+            WHEN r.isFK = 1
+            THEN COALESCE(f1.displayVal, r.oldVal)
+            ELSE r.oldVal
+        END AS oldValDisplay,
+
+        CASE
+            WHEN r.isFK = 1
+            THEN COALESCE(f2.displayVal, r.newVal)
+            ELSE r.newVal
+        END AS newValDisplay,
+
+        r.updatedAt,
+        r.updatedBy
+    FROM tmp_audit_raw r
+    LEFT JOIN tmp_fk_display f1
+           ON r.isFK = 1
+          AND f1.refTable = r.refTable
+          AND f1.refID = r.oldVal
+    LEFT JOIN tmp_fk_display f2
+           ON r.isFK = 1
+          AND f2.refTable = r.refTable
+          AND f2.refID = r.newVal
+    ORDER BY r.updatedAt DESC;
+
+    /* =====================================================
+       6. CLEANUP
+    ===================================================== */
+    DROP TEMPORARY TABLE tmp_fk_display;
+    DROP TEMPORARY TABLE tmp_fk_ids;
+    DROP TEMPORARY TABLE tmp_audit_raw;
+
+END

@@ -1,0 +1,41 @@
+CREATE TRIGGER trg_audit_rohs_substance
+AFTER UPDATE ON rohs_substance
+FOR EACH ROW
+BEGIN
+    DECLARE v_main_category_name VARCHAR(50);
+    DECLARE v_parent_name VARCHAR(50);
+
+    -- Retrieve display values for foreign key columns
+    IF NEW.ref_main_category_id IS NOT NULL THEN
+        SELECT name INTO v_main_category_name
+        FROM rohs_main_category
+        WHERE id = NEW.ref_main_category_id;
+    END IF;
+
+    IF NEW.ref_parent_id IS NOT NULL THEN
+        SELECT name INTO v_parent_name
+        FROM rohs_substance
+        WHERE id = NEW.ref_parent_id;
+    END IF;
+
+    -- Track name changes
+    IF OLD.name <> NEW.name THEN
+        INSERT INTO dataentrychange_auditlog
+        (root_table_name, root_ref_id, table_name, ref_trans_id, entity_level, entity_display_ref, col_name, old_val, new_val, updated_by, update_by_role_id)
+        VALUES ('rohs_substance', NEW.id, 'rohs_substance', NEW.id, 0, NEW.name, 'name', OLD.name, NEW.name, NEW.updated_by, NEW.update_by_role_id);
+    END IF;
+
+    -- Track main category changes
+    IF OLD.ref_main_category_id <> NEW.ref_main_category_id THEN
+        INSERT INTO dataentrychange_auditlog
+        (root_table_name, root_ref_id, table_name, ref_trans_id, entity_level, entity_display_ref, col_name, old_val, new_val, updated_by, update_by_role_id)
+        VALUES ('rohs_substance', NEW.id, 'rohs_substance', NEW.id, 0, NEW.name, 'ref_main_category_id', OLD.ref_main_category_id, NEW.ref_main_category_id, NEW.updated_by, NEW.update_by_role_id);
+    END IF;
+
+    -- Track parent substance changes
+    IF OLD.ref_parent_id <> NEW.ref_parent_id THEN
+        INSERT INTO dataentrychange_auditlog
+        (root_table_name, root_ref_id, table_name, ref_trans_id, entity_level, entity_display_ref, col_name, old_val, new_val, updated_by, update_by_role_id)
+        VALUES ('rohs_substance', NEW.id, 'rohs_substance', NEW.id, 0, NEW.name, 'ref_parent_id', OLD.ref_parent_id, NEW.ref_parent_id, NEW.updated_by, NEW.update_by_role_id);
+    END IF;
+END;

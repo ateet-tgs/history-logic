@@ -1,0 +1,13 @@
+CREATE TABLE sales_order_line_detail (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    sales_order_id BIGINT NOT NULL,
+    product_code VARCHAR(50),
+    quantity INT,
+    price DECIMAL(10,2),
+    updated_by BIGINT,
+    update_by_role_id INT,
+
+    CONSTRAINT fk_line_sales_order
+        FOREIGN KEY (sales_order_id)
+        REFERENCES sales_order(id)
+);

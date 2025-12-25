@@ -1,0 +1,27 @@
+-- RoHS substances/classifications with hierarchical parent-child support
+CREATE TABLE rohs_substance (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50),
+    description VARCHAR(250),
+    is_active TINYINT,
+    created_by VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_by VARCHAR(255),
+    updated_at DATETIME,
+    deleted_by VARCHAR(255),
+    deleted_at DATETIME,
+    is_deleted TINYINT(1) DEFAULT 0,
+    system_generated TINYINT,
+    rohs_icon VARCHAR(255),
+    ref_main_category_id INT,
+    create_by_role_id INT,
+    update_by_role_id INT,
+    delete_by_role_id INT,
+    display_order DECIMAL(10,5),
+    ref_parent_id INT,
+    source_name VARCHAR(50),
+    unq_date DATETIME,
+
+    CONSTRAINT fk_rohs_substance_category FOREIGN KEY (ref_main_category_id)
+        REFERENCES rohs_main_category(id)
+);

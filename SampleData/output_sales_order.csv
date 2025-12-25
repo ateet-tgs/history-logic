@@ -1,0 +1,8 @@
+id,tableName,colName,oldValDisplay,newValDisplay,updatedAt,updatedBy
+10,sales_order_address,city,Mumbai,Surat,"2025-12-18 12:12:25",102
+6,SalesOrderReleaseLine,releasedQty,3,4,"2025-12-17 19:04:31",102
+7,SalesOrderReleaseLine,releaseDate,2025-12-17,2025-12-18,"2025-12-17 19:04:31",102
+4,SalesOrderLineDetail,quantity,15,8,"2025-12-17 19:04:22",102
+5,SalesOrderLineDetail,price,250.00,520.00,"2025-12-17 19:04:22",102
+2,SalesOrderLineDetail,quantity,10,15,"2025-12-17 18:57:25",101
+1,SalesOrder,status,NEW,CONFIRMED,"2025-12-17 18:56:39",101
