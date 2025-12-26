@@ -62,8 +62,8 @@ INSERT INTO audit_column_metadata
 VALUES
 ('rohs_substance', 'name', 0, NULL, NULL, NULL, 0),
 ('rohs_substance', 'description', 0, NULL, NULL, NULL, 0),
-('rohs_substance', 'ref_main_category_id', 1, 'rohs_main_category', 'id', 'name', 1),
-('rohs_substance', 'ref_parent_id', 1, 'rohs_substance', 'id', 'name', 1),
+('rohs_substance', 'ref_main_category_id', 1, 'rohs_main_category', 'id', 'name', 0),
+('rohs_substance', 'ref_parent_id', 1, 'rohs_substance', 'id', 'name', 0),
 ('rohs_substance', 'display_order', 0, NULL, NULL, NULL, 0),
 ('rohs_substance', 'system_generated', 0, NULL, NULL, NULL, 0),
 ('rohs_substance', 'rohs_icon', 0, NULL, NULL, NULL, 0);

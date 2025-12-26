@@ -1,0 +1,656 @@
+
+1️⃣ Tables & Schema
+Table names
+	dataentrychange_auditlog	
+		Columns:	
+		id	bigint AI PK
+		root_table_name	varchar(100)
+		root_ref_id	bigint
+		table_name	varchar(100)
+		ref_trans_id	bigint
+		entity_level	tinyint
+		entity_display_ref	varchar(255)
+		col_name	varchar(100)
+		old_val	longtext
+		old_val	longtext
+		updated_at	datetime
+		updated_by	bigint
+		update_by_role_id	int
+		value_type	varchar(50)
+
+	audit_column_metadata	
+		Columns:	
+		id	int AI PK
+		table_name	varchar(100)
+		col_name	varchar(100)
+		is_foreign_key	tinyint(1)
+		ref_table	varchar(100)
+		ref_pk	varchar(100)
+		ref_display_column	varchar(100)
+		is_context_field	tinyint(1)
+		display_order	
+
+	audit_change_context_snapshot	
+		Columns:	
+		id	bigint AI PK
+		audit_log_id	bigint
+		context_field	varchar(50)
+		context_value	bigint
+		value_type	
+
+
+2️⃣ Purpose of This DB Design
+Audit logging?
+	The technical database architecture and audit logging strategy for managing historical changes within tracking through specific audit tables that captures modifications to literal values and FK values. The structure includes metadata tables used to define table relationships and foreign keys, ensuring that the history of each record remains logically connected to its actual value. These tables serve as a comprehensive transactional audit trail, documenting exactly who changed specific values and when those adjustments occurred, Also take care about the snapshots of related value at that time.
+
+Multi-entity tracking?
+	Its mainly designed for generic use, as Q2C (my project) have lots of tables around 400 and we need to maintain the history of every entities. Its too much repeated work also including some special cases which we have covered here, so we can reduce the hours. Using this we can make common history component on UI, API and stored procedure. We will have two generic procedure for inserting data and fetching data.
+
+3️⃣ Business Flow(s)
+Examples:
+Sales Order
+   |-- Address Detail
+   |     |-- Billing Address
+   |     |-- Shipping Address
+   |
+   |-- Line Detail
+         |-- Line Item
+               |-- Release Line
+Sales Order
+   |-- Address Detail
+   |-- Line Detail
+         |-- Release Line
+
+Then we have configuration at some level
+table: audit_column_metadata
+id  table_name  col_name    is_foreign_key  ref_table  ref_pk ref_display_column is_context_field
+1	sales_order	customer_id	1	customer	id	customer_name	0
+2	sales_order	order_no	0				0
+3	sales_order	order_date	0				0
+4	sales_order	status	0				0
+5	sales_order_address	address_type	0				0
+6	sales_order_address	city	0				0
+7	sales_order_address	country	0				0
+8	parts	part_no	0				0
+9	parts	name	0				0
+10	parts	description	0				0
+11	sales_order_line_detail	part_id	1	parts	id	name	0
+12	sales_order_line_detail	quantity	0				0
+13	sales_order_line_detail	price	0				0
+14	sales_order_release_line	release_no	0				0
+15	sales_order_release_line	released_qty	0				0
+16	sales_order_release_line	release_date	0				0
+17	customer	customer_code	0				0
+18	customer	customer_name	0				0
+19	customer	email	0				0
+20	customer	phone	0				0
+21	customer	is_active	0				0
+22	rohs_main_category	name	0				0
+23	rohs_main_category	description	0				0
+24	rohs_main_category	is_active	0				0
+25	rohs_substance	name	0				0
+26	rohs_substance	description	0				0
+27	rohs_substance	ref_main_category_id	1	rohs_main_category	id	name	0
+28	rohs_substance	ref_parent_id	1	rohs_substance	id	name	0
+29	rohs_substance	display_order	0				0
+30	rohs_substance	system_generated	0				0
+31	rohs_substance	rohs_icon	0				0
+32	sales_order_line_detail	part_id	1	parts	id	part_no	1
+33	sales_order_line_detail	sales_order_version	0	sales_order	id	version	1
+34	sales_order_release_line	part_id	1	parts	id	part_no	1
+35	sales_order_release_line	sales_order_version	0	sales_order	id	version	1
+
+table: dataentrychange_auditlog
+id	root_table_name	root_ref_id	table_name	ref_trans_id	entity_level	entity_display_ref	col_name	old_val	new_value	updated_at	updated_by	update_by_role_id
+1	customer	1001	customer	1001	0	Tata Electronics Pvt Ltd	customer_name	Tata Electronics	Tata Electronics Pvt Ltd	2025-12-25 15:00:43	101	2
+2	customer	1001	customer	1001	0	Tata Electronics Pvt Ltd	email	contact@tataelec.com	support@tataelec.com	2025-12-25 15:00:43	101	2
+4	customer	1002	customer	1002	0	Reliance Components	is_active	1	0	2025-12-25 15:00:43	102	2
+5	customer	1002	customer	1002	0	Reliance Components	phone	9123456780	9988776655	2025-12-25 15:00:43	102	2
+7	rohs_main_category	10	rohs_main_category	10	0	Heavy Metals Updated	is_active	1	0	2025-12-25 15:00:43	101	1
+8	rohs_main_category	10	rohs_main_category	10	0	Heavy Metals Updated	name	Heavy Metals	Heavy Metals Updated	2025-12-25 15:00:43	101	1
+10	rohs_main_category	11	rohs_main_category	11	0	Flame Retardants	description	Restricted flame retardants	Restricted flame retardants updated	2025-12-25 15:00:43	101	1
+11	rohs_substance	101	rohs_substance	101	0	Lead (Pb) Updated	name	Lead (Pb)	Lead (Pb) Updated	2025-12-25 15:00:43	101	1
+12	rohs_substance	102	rohs_substance	102	0	Mercury (Hg)	display_order	2.00000	3.00000	2025-12-25 15:00:43	101	1
+13	sales_order	2001	sales_order	2001	0	SO-2025-0001	customer_id	1001	1002	2025-12-25 15:00:43	201	2
+14	sales_order	2001	sales_order	2001	0	SO-2025-0001	status	Confirmed	Shipped	2025-12-25 15:00:43	201	2
+16	sales_order	2002	sales_order	2002	0	SO-2025-0002	order_date	2025-01-06	2025-02-01	2025-12-25 15:00:43	202	2
+17	sales_order	2002	sales_order	2002	0	SO-2025-0002	status	Completed	Cancelled	2025-12-25 15:00:43	202	2
+19	sales_order	2001	sales_order_address	3001	1	SO-2025-0001	city	Mumbai	Pune	2025-12-25 15:00:43	301	2
+20	sales_order	2002	sales_order_address	3002	1	SO-2025-0002	city	Ahmedabad	Surat	2025-12-25 15:00:43	302	2
+21	sales_order	2001	sales_order_line_detail	4001	1	SO-2025-0001	price	255.00	260.00	2025-12-25 15:00:43	401	3
+22	sales_order	2001	sales_order_line_detail	4001	1	SO-2025-0001	quantity	1000	1200	2025-12-25 15:00:43	401	3
+24	sales_order	2002	sales_order_line_detail	4002	1	SO-2025-0002	quantity	1500	1600	2025-12-25 15:00:43	402	3
+25	sales_order	2001	sales_order_release_line	5001	2	SO-2025-0001	release_date	2025-01-10	2025-01-12	2025-12-25 15:00:43	501	4
+26	sales_order	2001	sales_order_release_line	5001	2	SO-2025-0001	released_qty	600	700	2025-12-25 15:00:43	501	4
+28	sales_order	2002	sales_order_release_line	5002	2	SO-2025-0002	release_date	2025-01-12	2025-01-15	2025-12-25 15:00:43	502	4
+29	sales_order	2002	sales_order_release_line	5002	2	SO-2025-0002	released_qty	800	900	2025-12-25 15:00:43	502	4
+31	sales_order	2001	sales_order_line_detail	4001	1	SO-2025-0001	price	260.00	265.00	2025-12-25 15:07:02	401	3
+32	sales_order	2002	sales_order_line_detail	4002	1	SO-2025-0002	quantity	1600	1700	2025-12-25 15:07:02	402	3
+33	sales_order	2001	sales_order_release_line	5001	2	SO-2025-0001	release_date	2025-01-12	2025-01-18	2025-12-25 15:07:02	501	4
+34	sales_order	2001	sales_order_release_line	5001	2	SO-2025-0001	released_qty	700	750	2025-12-25 15:07:02	501	4
+36	sales_order	2002	sales_order_release_line	5002	2	SO-2025-0002	release_date	2025-01-15	2025-01-20	2025-12-25 15:07:02	502	4
+37	sales_order	2002	sales_order_release_line	5002	2	SO-2025-0002	released_qty	900	950	2025-12-25 15:07:02	502	4
+39	sales_order	2001	sales_order_line_detail	4001	1	SO-2025-0001	price	265.00	120.00	2025-12-25 15:09:04	401	3
+40	sales_order	2001	sales_order_line_detail	4001	1	SO-2025-0001	quantity	1200	1000	2025-12-25 15:09:04	401	3
+42	sales_order	2001	sales_order_release_line	5001	2	SO-2025-0001	release_date	2025-01-18	2025-01-22	2025-12-25 15:09:04	501	4
+43	sales_order	2001	sales_order_release_line	5001	2	SO-2025-0001	released_qty	750	500	2025-12-25 15:09:04	501	4
+45	sales_order	2001	sales_order_release_line	5001	2	SO-2025-0001	released_qty	500	650	2025-12-25 15:09:04	501	4
+46	sales_order	2001	sales_order_line_detail	4001	1	SO-2025-0001	part_id	501	502	2025-12-25 15:19:36	401	3
+47	sales_order	2001	sales_order_release_line	5001	2	SO-2025-0001	released_qty	650	500	2025-12-25 15:19:36	501	4
+48	sales_order	2001	sales_order_release_line	5001	2	SO-2025-0001	released_qty	500	650	2025-12-25 15:19:36	501	4
+49	sales_order	2001	sales_order	2001	0	SO-2025-0001	customer_id	1002	1001	2025-12-25 16:12:05	201	2
+50	rohs_substance	102	rohs_substance	102	0	Mercury (Hg)	display_order	3.00000	99.00000	2025-12-25 17:39:04	101	1
+51	rohs_substance	102	rohs_substance	102	0	Mercury (Hg)	ref_main_category_id	11	10	2025-12-25 17:41:28	101	1
+52	rohs_substance	102	rohs_substance	102	0	Mercury (Hg)	ref_parent_id	102	101	2025-12-25 19:08:08	101	1
+
+Stored Procedures
+1) For Insert data, it will be common and called from all tables triggers
+DROP PROCEDURE IF EXISTS Sproc_Audit_Generic_Update;
+DELIMITER $$
+
+CREATE PROCEDURE Sproc_Audit_Generic_Update
+(
+    IN p_rootTableName        VARCHAR(100),
+    IN p_rootRefID            BIGINT,
+    IN p_tableName            VARCHAR(100),
+    IN p_refTransID           BIGINT,
+    IN p_entityLevel          TINYINT,
+    IN p_entityDisplayRef     VARCHAR(255),
+    IN p_oldJSON              JSON,
+    IN p_newJSON              JSON,
+    IN p_contextJSON          JSON,
+    IN p_updatedBy            BIGINT,
+    IN p_updateByRoleId       INT
+)
+BEGIN
+
+    /* =====================================================
+       Only proceed if both JSONs exist
+    ===================================================== */
+    IF p_oldJSON IS NOT NULL AND p_newJSON IS NOT NULL THEN
+
+        /* =====================================================
+           1. TEMP DIFF TABLE
+        ===================================================== */
+        DROP TEMPORARY TABLE IF EXISTS tmp_audit_diff;
+
+        CREATE TEMPORARY TABLE tmp_audit_diff
+        (
+            col_name VARCHAR(100),
+            old_val  LONGTEXT,
+            new_val  LONGTEXT,
+            PRIMARY KEY (col_name)
+        ) ENGINE=InnoDB;
+
+        /* =====================================================
+           2. DIFF EXTRACTION
+        ===================================================== */
+        INSERT INTO tmp_audit_diff (col_name, old_val, new_val)
+        SELECT
+            jt.col_name,
+            JSON_UNQUOTE(JSON_EXTRACT(p_oldJSON, CONCAT('$.', jt.col_name))),
+            JSON_UNQUOTE(JSON_EXTRACT(p_newJSON, CONCAT('$.', jt.col_name)))
+        FROM JSON_TABLE(
+                JSON_KEYS(p_oldJSON),
+                '$[*]' COLUMNS (
+                    col_name VARCHAR(100) PATH '$'
+                )
+             ) jt
+        WHERE
+            JSON_UNQUOTE(JSON_EXTRACT(p_oldJSON, CONCAT('$.', jt.col_name)))
+            <> JSON_UNQUOTE(JSON_EXTRACT(p_newJSON, CONCAT('$.', jt.col_name)));
+
+        /* =====================================================
+           3. INSERT AUDIT LOGS
+        ===================================================== */
+        INSERT INTO dataentrychange_auditlog
+        (
+            root_table_name,
+            root_ref_id,
+            table_name,
+            ref_trans_id,
+            entity_level,
+            entity_display_ref,
+            col_name,
+            old_val,
+            new_val,
+            updated_at,
+            updated_by,
+            update_by_role_id
+        )
+        SELECT
+            p_rootTableName,
+            p_rootRefID,
+            p_tableName,
+            p_refTransID,
+            p_entityLevel,
+            p_entityDisplayRef,
+            d.col_name,
+            d.old_val,
+            d.new_val,
+            NOW(),
+            p_updatedBy,
+            p_updateByRoleId
+        FROM tmp_audit_diff d
+        JOIN audit_column_metadata m
+          ON m.table_name = p_tableName
+         AND m.col_name   = d.col_name
+         AND m.is_context_field = 0;
+
+        /* =====================================================
+           4. CONTEXT SNAPSHOT (FULLY DYNAMIC)
+        ===================================================== */
+        IF p_contextJSON IS NOT NULL THEN
+
+            INSERT INTO audit_change_context_snapshot
+            (
+                audit_log_id,
+                context_field,
+                context_value
+            )
+            SELECT
+                a.id,
+                m.col_name,
+                JSON_UNQUOTE(
+                    JSON_EXTRACT(p_contextJSON, CONCAT('$.', m.col_name))
+                )
+            FROM dataentrychange_auditlog a
+            JOIN audit_column_metadata m
+              ON m.table_name = p_tableName
+             AND m.is_context_field = 1
+            WHERE a.table_name   = p_tableName
+              AND a.ref_trans_id = p_refTransID
+              AND JSON_EXTRACT(p_contextJSON, CONCAT('$.', m.col_name)) IS NOT NULL;
+
+        END IF;
+
+        /* =====================================================
+           5. CLEANUP
+        ===================================================== */
+        DROP TEMPORARY TABLE IF EXISTS tmp_audit_diff;
+
+    END IF;
+
+END$$
+DELIMITER ;
+
+2) For fetching data, single sp to fetch any root table
+DROP PROCEDURE IF EXISTS `Sproc_Get_AuditHistory`;
+DELIMITER $$
+
+CREATE PROCEDURE `Sproc_Get_AuditHistory`(
+    IN p_rootTableName VARCHAR(100),
+    IN p_rootRefID BIGINT,
+    IN p_pageIndex INT,
+    IN p_pageSize INT
+)
+BEGIN
+    -- ==========================================
+    -- 1. Declare all variables at the top
+    -- ==========================================
+    DECLARE v_offset INT DEFAULT (p_pageIndex - 1) * p_pageSize;
+    DECLARE v_context_cols LONGTEXT;
+
+    DECLARE done_fk INT DEFAULT 0;
+    DECLARE v_table_name VARCHAR(100);
+    DECLARE v_col_name VARCHAR(100);
+    DECLARE v_ref_table VARCHAR(100);
+    DECLARE v_ref_pk VARCHAR(100);
+    DECLARE v_ref_display VARCHAR(100);
+
+    DECLARE fk_cursor CURSOR FOR
+        SELECT DISTINCT table_name, col_name, ref_table, ref_pk, ref_display
+        FROM tmp_fk_ids;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_fk = 1;
+
+    -- ==========================================
+    -- 2. Cleanup temp tables
+    -- ==========================================
+    DROP TEMPORARY TABLE IF EXISTS tmp_fk_ids;
+    DROP TEMPORARY TABLE IF EXISTS tmp_fk_display_old;
+    DROP TEMPORARY TABLE IF EXISTS tmp_fk_display_new;
+    DROP TEMPORARY TABLE IF EXISTS tmp_context_display;
+
+    -- ==========================================
+    -- 3. Collect all FK IDs
+    -- ==========================================
+    CREATE TEMPORARY TABLE tmp_fk_ids (
+        table_name VARCHAR(100),
+        col_name VARCHAR(100),
+        ref_table VARCHAR(100),
+        ref_pk VARCHAR(100),
+        ref_display VARCHAR(100),
+        ref_id BIGINT,
+        PRIMARY KEY (table_name, col_name, ref_id)
+    ) ENGINE=InnoDB;
+
+    INSERT IGNORE INTO tmp_fk_ids
+    SELECT a.table_name, a.col_name, m.ref_table, m.ref_pk, m.ref_display_column, CAST(a.old_val AS SIGNED)
+    FROM dataentrychange_auditlog a
+    JOIN audit_column_metadata m
+      ON m.table_name = a.table_name AND m.col_name = a.col_name AND m.is_foreign_key = 1
+    WHERE a.root_table_name = p_rootTableName AND a.root_ref_id = p_rootRefID AND a.old_val IS NOT NULL
+
+    UNION
+
+    SELECT a.table_name, a.col_name, m.ref_table, m.ref_pk, m.ref_display_column, CAST(a.new_val AS SIGNED)
+    FROM dataentrychange_auditlog a
+    JOIN audit_column_metadata m
+      ON m.table_name = a.table_name AND m.col_name = a.col_name AND m.is_foreign_key = 1
+    WHERE a.root_table_name = p_rootTableName AND a.root_ref_id = p_rootRefID AND a.new_val IS NOT NULL
+
+    UNION
+
+    SELECT a.table_name, c.context_field, m.ref_table, m.ref_pk, m.ref_display_column, CAST(c.context_value AS SIGNED)
+    FROM audit_change_context_snapshot c
+    JOIN dataentrychange_auditlog a ON a.id = c.audit_log_id
+    JOIN audit_column_metadata m
+      ON m.table_name = a.table_name AND m.col_name = c.context_field AND m.is_foreign_key = 1 AND m.is_context_field = 1
+    WHERE a.root_table_name = p_rootTableName AND a.root_ref_id = p_rootRefID;
+
+    -- ==========================================
+    -- 4. Create FK display tables
+    -- ==========================================
+    CREATE TEMPORARY TABLE tmp_fk_display_old (
+        table_name VARCHAR(100),
+        col_name VARCHAR(100),
+        ref_id BIGINT,
+        display_val VARCHAR(255),
+        PRIMARY KEY (table_name, col_name, ref_id)
+    ) ENGINE=InnoDB;
+
+    CREATE TEMPORARY TABLE tmp_fk_display_new LIKE tmp_fk_display_old;
+
+    -- ==========================================
+    -- 5. Resolve FK display values dynamically
+    -- ==========================================
+    OPEN fk_cursor;
+
+    fk_loop: LOOP
+        FETCH fk_cursor INTO v_table_name, v_col_name, v_ref_table, v_ref_pk, v_ref_display;
+        IF done_fk = 1 THEN LEAVE fk_loop; END IF;
+
+        -- OLD values
+        SET @sql = CONCAT(
+            'INSERT IGNORE INTO tmp_fk_display_old (table_name, col_name, ref_id, display_val)
+             SELECT fk.table_name, fk.col_name, fk.ref_id, t.', v_ref_display, '
+             FROM tmp_fk_ids fk
+             JOIN ', v_ref_table, ' t
+               ON t.', v_ref_pk, ' = fk.ref_id
+             WHERE fk.table_name = ''', v_table_name, ''' AND fk.col_name = ''', v_col_name, ''''
+        );
+        PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+        -- NEW values
+        SET @sql = CONCAT(
+            'INSERT IGNORE INTO tmp_fk_display_new (table_name, col_name, ref_id, display_val)
+             SELECT fk.table_name, fk.col_name, fk.ref_id, t.', v_ref_display, '
+             FROM tmp_fk_ids fk
+             JOIN ', v_ref_table, ' t
+               ON t.', v_ref_pk, ' = fk.ref_id
+             WHERE fk.table_name = ''', v_table_name, ''' AND fk.col_name = ''', v_col_name, ''''
+        );
+        PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+    END LOOP;
+
+    CLOSE fk_cursor;
+
+    -- ==========================================
+    -- 6. Pivot context fields
+    -- ==========================================
+    CREATE TEMPORARY TABLE tmp_context_display (
+        audit_log_id BIGINT,
+        context_field VARCHAR(100),
+        context_display VARCHAR(255),
+        PRIMARY KEY (audit_log_id, context_field)
+    ) ENGINE=InnoDB;
+
+    INSERT IGNORE INTO tmp_context_display
+    SELECT
+        c.audit_log_id,
+        c.context_field,
+        COALESCE(fd.display_val, c.context_value) AS context_display
+    FROM audit_change_context_snapshot c
+    JOIN dataentrychange_auditlog a ON a.id = c.audit_log_id
+    LEFT JOIN tmp_fk_display_new fd
+      ON fd.table_name = a.table_name AND fd.col_name = c.context_field AND fd.ref_id = c.context_value
+    WHERE a.root_table_name = p_rootTableName AND a.root_ref_id = p_rootRefID;
+
+    SELECT GROUP_CONCAT(DISTINCT
+        CONCAT(
+            'MAX(CASE WHEN context_field = ''',
+            context_field,
+            ''' THEN context_display END) AS `',
+            context_field,
+            '`'
+        ) SEPARATOR ', '
+    ) INTO v_context_cols
+    FROM tmp_context_display;
+
+    -- ==========================================
+    -- 7. Return final audit history
+    -- ==========================================
+    SET @sql = CONCAT(
+        'SELECT a.table_name, a.col_name,
+                COALESCE(fd_old.display_val, a.old_val) AS oldVal,
+                COALESCE(fd_new.display_val, a.new_val) AS newVal',
+        IF(v_context_cols IS NOT NULL, CONCAT(', ', v_context_cols), ''),
+        ', a.updated_at, a.updated_by
+         FROM dataentrychange_auditlog a
+         LEFT JOIN tmp_fk_display_old fd_old
+           ON fd_old.table_name = a.table_name AND fd_old.col_name = a.col_name AND fd_old.ref_id = a.old_val
+         LEFT JOIN tmp_fk_display_new fd_new
+           ON fd_new.table_name = a.table_name AND fd_new.col_name = a.col_name AND fd_new.ref_id = a.new_val
+         LEFT JOIN tmp_context_display cs
+           ON cs.audit_log_id = a.id
+         WHERE a.root_table_name = ''', p_rootTableName, '''
+           AND a.root_ref_id = ', p_rootRefID, '
+         GROUP BY a.id
+         ORDER BY a.updated_at DESC
+         LIMIT ', p_pageSize, ' OFFSET ', v_offset
+    );
+
+    PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+    -- ==========================================
+    -- 8. Cleanup temp tables
+    -- ==========================================
+    DROP TEMPORARY TABLE IF EXISTS tmp_fk_ids;
+    DROP TEMPORARY TABLE IF EXISTS tmp_fk_display_old;
+    DROP TEMPORARY TABLE IF EXISTS tmp_fk_display_new;
+    DROP TEMPORARY TABLE IF EXISTS tmp_context_display;
+
+END$$
+DELIMITER ;
+
+
+Triggers Example Using SP in it:
+
+1) When need to capture some context at the time of changes
+/* ============================================================
+   SALES ORDER RELEASE LINE AUDIT (LEVEL 2)
+============================================================ */
+CREATE TRIGGER trg_audit_sales_order_release
+AFTER UPDATE ON sales_order_release_line
+FOR EACH ROW
+BEGIN
+    DECLARE v_so_id BIGINT;
+    DECLARE v_part_id BIGINT;
+    DECLARE v_version INT;
+    DECLARE v_order_no VARCHAR(50);
+
+    SELECT l.sales_order_id, l.part_id
+      INTO v_so_id, v_part_id
+    FROM sales_order_line_detail l
+    WHERE l.id = NEW.line_detail_id;
+
+    SELECT order_no, version
+      INTO v_order_no, v_version
+    FROM sales_order
+    WHERE id = v_so_id;
+
+    CALL Sproc_Audit_Generic_Update(
+        'sales_order',
+        v_so_id,
+        'sales_order_release_line',
+        NEW.id,
+        2,
+        v_order_no,
+        JSON_OBJECT(
+            'release_no', OLD.release_no,
+            'released_qty', OLD.released_qty,
+            'release_date', OLD.release_date
+        ),
+        JSON_OBJECT(
+            'release_no', NEW.release_no,
+            'released_qty', NEW.released_qty,
+            'release_date', NEW.release_date
+        ),
+        JSON_OBJECT(                      -- ✅ CONTEXT
+            'part_id', v_part_id,
+            'sales_order_version', v_version
+        ),
+        NEW.updated_by,
+        NEW.update_by_role_id
+    );
+END$$
+
+DELIMITER ;
+
+/* ============================================================
+   SALES ORDER LINE DETAIL AUDIT (LEVEL 1)
+============================================================ */
+CREATE TRIGGER trg_audit_sales_order_line
+AFTER UPDATE ON sales_order_line_detail
+FOR EACH ROW
+BEGIN
+    DECLARE v_order_no VARCHAR(50);
+    DECLARE v_version INT;
+
+    SELECT order_no, version
+      INTO v_order_no, v_version
+    FROM sales_order
+    WHERE id = NEW.sales_order_id;
+
+    CALL Sproc_Audit_Generic_Update(
+        'sales_order',
+        NEW.sales_order_id,
+        'sales_order_line_detail',
+        NEW.id,
+        1,
+        v_order_no,
+        JSON_OBJECT(
+            'part_id', OLD.part_id,
+            'quantity', OLD.quantity,
+            'price', OLD.price
+        ),
+        JSON_OBJECT(
+            'part_id', NEW.part_id,
+            'quantity', NEW.quantity,
+            'price', NEW.price
+        ),
+        JSON_OBJECT(              
+            'part_id', NEW.part_id,
+            'sales_order_version', v_version
+        ),
+        NEW.updated_by,
+        NEW.update_by_role_id
+    );
+END$$
+
+2) When you dont need to capture any additional data
+/* ============================================================
+   SALES ORDER ADDRESS AUDIT (LEVEL 1)
+============================================================ */
+CREATE TRIGGER trg_audit_sales_order_address
+AFTER UPDATE ON sales_order_address
+FOR EACH ROW
+BEGIN
+    DECLARE v_order_no VARCHAR(50);
+    SELECT order_no INTO v_order_no FROM sales_order WHERE id = NEW.sales_order_id;
+
+    CALL Sproc_Audit_Generic_Update(
+        'sales_order',
+        NEW.sales_order_id,
+        'sales_order_address',
+        NEW.id,
+        1,
+        v_order_no,
+        JSON_OBJECT(
+            'address_type', OLD.address_type,
+            'city', OLD.city,
+            'country', OLD.country
+        ),
+        JSON_OBJECT(
+            'address_type', NEW.address_type,
+            'city', NEW.city,
+            'country', NEW.country
+        ),
+        null,
+        NEW.updated_by,
+        NEW.update_by_role_id
+    );
+END$$
+
+/* ============================================================
+   ROHS SUBSTANCE AUDIT
+============================================================ */
+CREATE TRIGGER trg_audit_rohs_substance
+AFTER UPDATE ON rohs_substance
+FOR EACH ROW
+BEGIN
+    CALL Sproc_Audit_Generic_Update(
+        'rohs_substance',
+        NEW.id,
+        'rohs_substance',
+        NEW.id,
+        0,
+        NEW.name,
+        JSON_OBJECT(
+            'name', OLD.name,
+            'description', OLD.description,
+            'is_active', OLD.is_active,
+            'ref_main_category_id', OLD.ref_main_category_id,
+            'ref_parent_id', OLD.ref_parent_id,
+            'system_generated', OLD.system_generated,
+            'rohs_icon', OLD.rohs_icon,
+            'display_order', OLD.display_order,
+            'source_name', OLD.source_name
+        ),
+        JSON_OBJECT(
+            'name', NEW.name,
+            'description', NEW.description,
+            'is_active', NEW.is_active,
+            'ref_main_category_id', NEW.ref_main_category_id,
+            'ref_parent_id', NEW.ref_parent_id,
+            'system_generated', NEW.system_generated,
+            'rohs_icon', NEW.rohs_icon,
+            'display_order', NEW.display_order,
+            'source_name', NEW.source_name
+        ),
+        null,
+        NEW.updated_by,
+        NEW.update_by_role_id
+    );
+END$$
+
+
+4️⃣ Rules You Already Have in Mind
+Notes:
+-- No update on audit tables directly
+-- One root entity per transaction
+-- If need to capture additional fields add them into audit_column_metadata
+-- Keep in mind relation doest mater for nested entites when its in history because you are already providing root_table_name with root_ref_id
+-- JSON and Commaseperated values are not supported yet will add on in next version
+-- audit_column_metadata is just for resolving the values and list of fields that must be watched for that table, however its exists in real or not for that table.
+
+
+5️⃣ How It Will Be Used
+Via Stored Procedures?- yes
+Via APIs?- yes
+Common API and Stored Procedure
+
+6️⃣ Target Audience
+Developers
