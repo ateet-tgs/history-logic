@@ -214,7 +214,7 @@ CREATE TABLE audit_column_metadata (
 
     is_context_field TINYINT(1),
 
-    UNIQUE KEY uk_table_column (table_name, col_name, is_context_field)
+    UNIQUE KEY uk_table_column (table_name, col_name, is_context_field, ref_display_column)
 );
 
 
