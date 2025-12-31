@@ -61,3 +61,10 @@ INSERT INTO sales_order_release_line
 VALUES
 (5001, 4001, 'REL-001', 600, '2025-01-10', 30, 4),
 (5002, 4002, 'REL-002', 800, '2025-01-12', 31, 4);
+
+
+INSERT INTO rohs_peers
+(id, source_substance_id, target_substance_id, relationship_type, is_active, created_by, create_by_role_id)
+VALUES
+(6001, 101, 102, 'Related', 1, 2, 1),
+(6002, 102, 101, 'Related', 1, 2, 1);

@@ -8,6 +8,8 @@ DROP TRIGGER IF EXISTS trg_audit_sales_order;
 DROP TRIGGER IF EXISTS trg_audit_sales_order_address;
 DROP TRIGGER IF EXISTS trg_audit_sales_order_line;
 DROP TRIGGER IF EXISTS trg_audit_sales_order_release;
+DROP TRIGGER IF EXISTS rohs_peers_AFTER_INSERT;
+DROP TRIGGER IF EXISTS rohs_peers_AFTER_UPDATE;
 
 DELIMITER $$
 
@@ -262,6 +264,50 @@ BEGIN
             'part_id', v_part_id,
             'sales_order_version', v_version
         ),
+        NEW.updated_by,
+        NEW.update_by_role_id
+    );
+END$$
+
+CREATE TRIGGER `rohs_peers_AFTER_INSERT` AFTER INSERT ON `rohs_peers` FOR EACH ROW BEGIN
+	 CALL Sproc_Audit_Generic_Update(
+        'rohs_substance',
+        NEW.source_substance_id,
+        'rohs_peers',
+        NEW.id,
+        1,
+        "Peers Added",
+         /* OLD JSON */
+        JSON_OBJECT(
+            'target_substance_id', ''
+        ),
+        /* NEW JSON */
+        JSON_OBJECT(
+            'target_substance_id', NEW.target_substance_id
+        ),
+        null,
+        NEW.created_by,
+        NEW.create_by_role_id
+    );
+END$$
+
+CREATE TRIGGER `rohs_peers_AFTER_UPDATE` AFTER UPDATE ON `rohs_peers` FOR EACH ROW BEGIN
+	CALL Sproc_Audit_Generic_Update(
+        'rohs_substance',
+        NEW.source_substance_id,
+        'rohs_peers',
+        NEW.id,
+        1,
+        "Peers Updated",
+         /* OLD JSON */
+        JSON_OBJECT(
+            'target_substance_id', OLD.target_substance_id
+        ),
+        /* NEW JSON */
+        JSON_OBJECT(
+            'target_substance_id', NEW.target_substance_id
+        ),
+        null,
         NEW.updated_by,
         NEW.update_by_role_id
     );

@@ -195,6 +195,7 @@ CREATE TABLE dataentrychange_auditlog (
     updated_at DATETIME,
     updated_by BIGINT,
     update_by_role_id INT,
+    value_type VARCHAR(50)
 
     INDEX idx_root (root_table_name, root_ref_id),
     INDEX idx_table_ref (table_name, ref_trans_id)
@@ -213,8 +214,17 @@ CREATE TABLE audit_column_metadata (
     ref_display_column VARCHAR(100),
 
     is_context_field TINYINT(1),
+    display_order int,
+    ref_label int,
+    value_type VARCHAR(50),
 
     UNIQUE KEY uk_table_column (table_name, col_name, is_context_field, ref_display_column)
+
+    CONSTRAINT fk_audit_column_metadata_reflabel
+        FOREIGN KEY (ref_label)
+        REFERENCES app_label_constant(id)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL
 );
 
 
@@ -233,4 +243,20 @@ CREATE TABLE audit_change_context_snapshot (
         FOREIGN KEY (audit_log_id)
         REFERENCES dataentrychange_auditlog(id)
         ON DELETE CASCADE
+);
+
+CREATE TABLE rohs_peers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    source_substance_id INT NOT NULL,
+    target_substance_id INT NOT NULL,
+    relationship_type VARCHAR(50),
+    is_active TINYINT DEFAULT 1,
+    created_by VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_by VARCHAR(255),
+    updated_at DATETIME,
+    create_by_role_id INT,
+    update_by_role_id INT,
+    CONSTRAINT fk_peers_source FOREIGN KEY (source_substance_id) REFERENCES rohs_substance(id),
+    CONSTRAINT fk_peers_target FOREIGN KEY (target_substance_id) REFERENCES rohs_substance(id)
 );

@@ -148,3 +148,35 @@ VALUES
     'version',
     1
 );
+
+INSERT INTO audit_column_metadata
+(table_name, col_name, is_foreign_key, ref_table, ref_pk, ref_display_column, is_context_field)
+VALUES
+('rohs_peers', 'source_substance_id', 1, 'rohs_substance', 'id', 'name', 0),
+('rohs_peers', 'target_substance_id', 1, 'rohs_substance', 'id', 'name', 0),
+('rohs_peers', 'relationship_type', 0, NULL, NULL, NULL, 0),
+('rohs_peers', 'is_active', 0, NULL, NULL, NULL, 0);
+
+INSERT INTO audit_column_metadata
+(table_name, col_name, is_foreign_key, ref_table, ref_pk, ref_display_column, is_context_field)
+VALUES
+('rohs_substance', 'peer_relationship_id', 1, 'rohs_peers', 'id', 'source_substance_id', 0);
+
+INSERT INTO audit_column_metadata
+(table_name, col_name, is_foreign_key, ref_table, ref_pk, ref_display_column, is_context_field)
+VALUES
+('rohs_main_category', 'name', 0, NULL, NULL, NULL, 0),
+('rohs_main_category', 'description', 0, NULL, NULL, NULL, 0),
+('rohs_main_category', 'is_active', 0, NULL, NULL, NULL, 0);
+
+-- rohs_substance
+INSERT INTO audit_column_metadata
+(table_name, col_name, is_foreign_key, ref_table, ref_pk, ref_display_column, is_context_field)
+VALUES
+('rohs_substance', 'name', 0, NULL, NULL, NULL, 0),
+('rohs_substance', 'description', 0, NULL, NULL, NULL, 0),
+('rohs_substance', 'ref_main_category_id', 1, 'rohs_main_category', 'id', 'name', 0),
+('rohs_substance', 'ref_parent_id', 1, 'rohs_substance', 'id', 'name', 0),
+('rohs_substance', 'display_order', 0, NULL, NULL, NULL, 0),
+('rohs_substance', 'system_generated', 0, NULL, NULL, NULL, 0),
+('rohs_substance', 'rohs_icon', 0, NULL, NULL, NULL, 0);
