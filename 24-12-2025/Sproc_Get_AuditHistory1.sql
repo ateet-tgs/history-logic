@@ -31,6 +31,8 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS tmp_fk_ids;
     DROP TEMPORARY TABLE IF EXISTS tmp_fk_display_old;
     DROP TEMPORARY TABLE IF EXISTS tmp_fk_display_new;
+    DROP TEMPORARY TABLE IF EXISTS tmp_fk_display_old_max_levels;
+    DROP TEMPORARY TABLE IF EXISTS tmp_fk_display_new_max_levels;
     DROP TEMPORARY TABLE IF EXISTS tmp_context_display;
     DROP TEMPORARY TABLE IF EXISTS tmp_fk_next_level;
     DROP TEMPORARY TABLE IF EXISTS tmp_fk_display_old_max;
@@ -54,61 +56,61 @@ BEGIN
     /* ---------- OLD + NEW VALUES ---------- */
     INSERT IGNORE INTO tmp_fk_ids
     SELECT
-        a.table_name,
-        a.col_name,
-        m.ref_table,
-        m.ref_pk,
-        TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(m.ref_display_column, ',', n.n), ',', -1)),
+        a.Tablename,
+        a.Colname,
+        m.RefTable,
+        m.RefPk,
+        TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(m.RefDisplayColumn, ',', n.n), ',', -1)),
         CAST(v.ref_id AS SIGNED),
         1 AS resolution_level
     FROM dataentrychange_auditlog a
     JOIN audit_column_metadata m
-        ON m.table_name = a.table_name
-       AND m.col_name = a.col_name
-       AND m.is_foreign_key = 1
+        ON m.TableName = a.Tablename
+       AND m.Colname = a.Colname
+       AND m.IsForeignKey = 1
     JOIN (
         SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL
         SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL
         SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10
     ) n
     JOIN (
-        SELECT id, old_val AS ref_id FROM dataentrychange_auditlog WHERE old_val IS NOT NULL
+        SELECT ID, Oldval AS ref_id FROM dataentrychange_auditlog WHERE Oldval IS NOT NULL
         UNION ALL
-        SELECT id, new_val FROM dataentrychange_auditlog WHERE new_val IS NOT NULL
+        SELECT ID, Newval FROM dataentrychange_auditlog WHERE Newval IS NOT NULL
     ) v
-        ON v.id = a.id
-    WHERE a.root_table_name = p_rootTableName
-      AND a.root_ref_id = p_rootRefID
-      AND n.n <= 1 + LENGTH(m.ref_display_column)
-                     - LENGTH(REPLACE(m.ref_display_column, ',', ''));
+        ON v.id = a.ID
+    WHERE a.RootTableName = p_rootTableName
+      AND a.RootRefId = p_rootRefID
+      AND n.n <= 1 + LENGTH(m.RefDisplayColumn)
+                     - LENGTH(REPLACE(m.RefDisplayColumn, ',', ''));
 
     /* ---------- CONTEXT SNAPSHOT FK ---------- */
     INSERT IGNORE INTO tmp_fk_ids
     SELECT
-        a.table_name,
-        c.context_field,
-        m.ref_table,
-        m.ref_pk,
-        TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(m.ref_display_column, ',', n.n), ',', -1)),
-        CAST(c.context_value AS SIGNED),
+        a.Tablename,
+        c.ContextField,
+        m.RefTable,
+        m.RefPk,
+        TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(m.RefDisplayColumn, ',', n.n), ',', -1)),
+        CAST(c.ContextValue AS SIGNED),
         1 AS resolution_level
     FROM audit_change_context_snapshot c
     JOIN dataentrychange_auditlog a
-        ON a.id = c.audit_log_id
+        ON a.ID = c.AuditLogId
     JOIN audit_column_metadata m
-        ON m.table_name = a.table_name
-       AND m.col_name = c.context_field
-       AND m.is_foreign_key = 1
-       AND m.is_context_field = 1
+        ON m.TableName = a.Tablename
+       AND m.ColName = c.ContextField
+       AND m.IsForeignKey = 1
+       AND m.IsContextField = 1
     JOIN (
         SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL
         SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL
         SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10
     ) n
-    WHERE a.root_table_name = p_rootTableName
-      AND a.root_ref_id = p_rootRefID
-      AND n.n <= 1 + LENGTH(m.ref_display_column)
-                     - LENGTH(REPLACE(m.ref_display_column, ',', ''));
+    WHERE a.RootTableName = p_rootTableName
+      AND a.RootRefId = p_rootRefID
+      AND n.n <= 1 + LENGTH(m.RefDisplayColumn)
+                     - LENGTH(REPLACE(m.RefDisplayColumn, ',', ''));
 
     /* =====================================================
        4. FK DISPLAY TABLES
@@ -215,18 +217,18 @@ BEGIN
                      SELECT DISTINCT
                          ''', v_ref_table, ''' AS table_name,
                          ''', v_ref_display, ''' AS col_name,
-                         m.ref_table,
-                         m.ref_pk,
-                         TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(m.ref_display_column, '','', n.n), '','', -1)) AS ref_display,
+                         m.RefTable,
+                         m.RefPk,
+                         TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(m.RefDisplayColumn, '','', n.n), '','', -1)) AS ref_display,
                          CAST(t.', v_ref_display, ' AS SIGNED) AS ref_id,
                          ', v_resolution_level + 1, ' AS resolution_level
                      FROM tmp_fk_ids fk
                      JOIN ', v_ref_table, ' t
                        ON t.', v_ref_pk, ' = fk.ref_id
                      JOIN audit_column_metadata m
-                       ON m.table_name = ''', v_ref_table, '''
-                      AND m.col_name = ''', v_ref_display, '''
-                      AND m.is_foreign_key = 1
+                       ON m.TableName = ''', v_ref_table, '''
+                      AND m.ColName = ''', v_ref_display, '''
+                      AND m.IsForeignKey = 1
                      JOIN (
                          SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL
                          SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL
@@ -237,8 +239,8 @@ BEGIN
                        AND fk.ref_display = ''', v_ref_display, '''
                        AND fk.resolution_level = ', v_resolution_level, '
                        AND t.', v_ref_display, ' IS NOT NULL
-                       AND n.n <= 1 + LENGTH(m.ref_display_column)
-                                  - LENGTH(REPLACE(m.ref_display_column, '','', ''''))'
+                       AND n.n <= 1 + LENGTH(m.RefDisplayColumn)
+                                  - LENGTH(REPLACE(m.RefDisplayColumn, '','', ''''))'
                 );
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
             END IF;
@@ -367,39 +369,39 @@ BEGIN
     /* ---------- FK CONTEXT ---------- */
     INSERT IGNORE INTO tmp_context_display
     SELECT
-        c.audit_log_id,
+        c.AuditLogId,
         fk.ref_display,
-        COALESCE(fd_max.display_val, c.context_value)
+        COALESCE(fd_max.display_val, c.ContextValue)
     FROM audit_change_context_snapshot c
     JOIN dataentrychange_auditlog a
-        ON a.id = c.audit_log_id
+        ON a.ID = c.AuditLogId
     JOIN tmp_fk_ids fk
-        ON fk.table_name = a.table_name
-       AND fk.col_name = c.context_field
-       AND fk.ref_id = c.context_value
+        ON fk.table_name = a.Tablename
+       AND fk.col_name = c.ContextField
+       AND fk.ref_id = c.ContextValue
     LEFT JOIN tmp_fk_display_new_max fd_max
         ON fd_max.table_name = fk.table_name
        AND fd_max.col_name = fk.col_name
        AND fd_max.ref_display = fk.ref_display
        AND fd_max.ref_id = fk.ref_id
-    WHERE a.root_table_name = p_rootTableName
-      AND a.root_ref_id = p_rootRefID;
+    WHERE a.RootTableName = p_rootTableName
+      AND a.RootRefId = p_rootRefID;
 
     /* ---------- NON-FK CONTEXT ---------- */
     INSERT IGNORE INTO tmp_context_display
     SELECT
-        c.audit_log_id,
-        c.context_field,
-        c.context_value
+        c.AuditLogId,
+        c.ContextField,
+        c.ContextValue
     FROM audit_change_context_snapshot c
     JOIN dataentrychange_auditlog a
-        ON a.id = c.audit_log_id
+        ON a.ID = c.AuditLogId
     JOIN audit_column_metadata m
-        ON m.table_name = a.table_name
-       AND m.col_name = c.context_field
-       AND m.is_foreign_key = 0
-    WHERE a.root_table_name = p_rootTableName
-      AND a.root_ref_id = p_rootRefID;
+        ON m.TableName = a.Tablename
+       AND m.ColName = c.ContextField
+       AND m.IsForeignKey = 0
+    WHERE a.RootTableName = p_rootTableName
+      AND a.RootRefId = p_rootRefID;
 
     SELECT GROUP_CONCAT(DISTINCT
         CONCAT(
@@ -417,30 +419,30 @@ BEGIN
     ===================================================== */
     SET @sql = CONCAT(
         'SELECT
-            a.id,
-            MAX(a.table_name) AS table_name,
-            MAX(a.col_name) AS col_name,
-            MAX(COALESCE(fd_old.display_val, a.old_val)) AS oldVal,
-            MAX(COALESCE(fd_new.display_val, a.new_val)) AS newVal',
+            a.ID,
+            MAX(a.Tablename) AS Tablename,
+            MAX(a.Colname) AS Colname,
+            MAX(COALESCE(fd_old.display_val, a.Oldval)) AS oldVal,
+            MAX(COALESCE(fd_new.display_val, a.Newval)) AS Newval',
         IF(v_context_cols IS NOT NULL, CONCAT(', ', v_context_cols), ''),
         ',
-            MAX(a.updated_at) AS updated_at,
-            MAX(a.updated_by) AS updated_by
+            MAX(a.updatedAt) AS updatedAt,
+            MAX(a.Updatedby) AS Updatedby
          FROM dataentrychange_auditlog a
          LEFT JOIN tmp_fk_display_old_max fd_old
-           ON fd_old.table_name = a.table_name
-          AND fd_old.col_name = a.col_name
-          AND fd_old.ref_id = a.old_val
+           ON fd_old.table_name = a.Tablename
+          AND fd_old.col_name = a.Colname
+          AND fd_old.ref_id = a.Oldval
          LEFT JOIN tmp_fk_display_new_max fd_new
-           ON fd_new.table_name = a.table_name
-          AND fd_new.col_name = a.col_name
-          AND fd_new.ref_id = a.new_val
+           ON fd_new.table_name = a.Tablename
+          AND fd_new.col_name = a.Colname
+          AND fd_new.ref_id = a.Newval
          LEFT JOIN tmp_context_display cs
-           ON cs.audit_log_id = a.id
-         WHERE a.root_table_name = ''', p_rootTableName, '''
-           AND a.root_ref_id = ', p_rootRefID, '
-         GROUP BY a.id
-         ORDER BY updated_at DESC
+           ON cs.audit_log_id = a.ID
+         WHERE a.RootTableName = ''', p_rootTableName, '''
+           AND a.RootRefId = ', p_rootRefID, '
+         GROUP BY a.ID
+         ORDER BY updatedAt DESC
          LIMIT ', p_pageSize, ' OFFSET ', v_offset
     );
 

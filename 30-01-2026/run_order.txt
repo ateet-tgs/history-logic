@@ -1,0 +1,10 @@
+/* Execution order for CDC queue solution - 30-01-2026 */
+
+1. cdc_queue_table.sql          -- Create queue, config, and status tables
+2. cdc_queue_insert_procedure.sql -- Lightweight insert (called by triggers)
+3. cdc_queue_audit_processor.sql  -- Process queue -> main audit (requires Sproc_JSON_DetectChanges)
+4. cdc_queue_processor.sql       -- Background processor
+5. cdc_queue_monitoring.sql      -- Status, cleanup, retry procedures
+
+-- To switch triggers to queue: replace Sproc_Audit_Generic_Update with Sproc_Audit_Queue_Insert
+-- Schedule processor: e.g. CREATE EVENT ... DO CALL Sproc_Audit_Queue_Processor(100, 'scheduler');

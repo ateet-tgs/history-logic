@@ -1,0 +1,193 @@
+================================================================= 
+table: salesorderdet_commission_attribute_mstdet
+| Column Name                   | Lable Name                                   |
+| ----------------------------- | -------------------------------------------- |
+| `unitPrice`                   | `PRICE_EA_INCLUDING_COMMISSION_PRICE`        |
+| `commissionPercentage`        | `COMMISSION_EA_PERCENTAGE`                   |
+| `commissionValue`             | `COMMISSION_EA_PRICE`                        |
+| `quoted_commissionPercentage` | `QUOTED_COMMISSION_EA_PERCENTAGE`            |
+| `quoted_commissionValue`      | `QUOTED_COMMISSION_EA_PRICE`                 |
+| `quoted_unitPrice`            | `QUOTED_PRICE_EA_INCLUDING_COMMISSION_PRICE` |
+| `poQty`                       | `OPEN_PO_QTY`                                |
+| `quotedQty`                   | `QUOTED_QTY`                                 |
+| `type`                        | `TYPE`                                       |
+| `commissionCalculateFrom`     | `COMMISSION_CALC_FROM`                       |
+| `salesCommissionNotes`        | `SALES_COMMISSION_NOTES`                     |
+
+===================================================================
+table: salesorderdet_commission_attribute
+| Column Name                | Lable Name                                   |
+| -------------------------- | -------------------------------------------- |
+| `unitPrice`                | `PRICE_EA_INCLUDING_COMMISSION_PRICE`        |
+| `commissionPercentage`     | `COMMISSION_EA_PERCENTAGE`                   |
+| `commissionValue`          | `COMMISSION_EA_PRICE`                        |
+| `org_commissionPercentage` | `QUOTED_COMMISSION_EA_PERCENTAGE`            |
+| `org_commissionValue`      | `QUOTED_COMMISSION_EA_PRICE`                 |
+| `org_unitPrice`            | `QUOTED_PRICE_EA_INCLUDING_COMMISSION_PRICE` |
+
+===================================================================
+table: salesorder_otherexpense_details
+| Column Name           | Lable Name              |
+| --------------------- | ----------------------- |
+| `partID`              | `ASSY_ID_PID`           |
+| `qty`                 | `QTY`                   |
+| `price`               | `PRICE`                 |
+| `frequency`           | `CHARGE_FREQUENCY`      |
+| `lineComment`         | `COMMENTS`              |
+| `lineInternalComment` | `INTERNAL_NOTES`        |
+| `frequencyType`       | `CHARGE_FREQUENCY_TYPE` |
+| `refReleaseLineID`    | `OF_RELEASE_NUMBER`     |
+| `partDescription`     | `DESCRIPTION`           |
+| `specialNote`         | `SPECIAL_NOTES`         |
+| `extendedPrice`       | `EXTENDED_PRICE`        |
+
+====================================================================
+table: salesshippingmst
+| Column Name                    | Lable Name                                     |
+| ------------------------------ | ---------------------------------------------- |
+| `qty`                          | `QTY`                                          |
+| `shippingDate`                 | `REQUESTED_SHIP_DATE_ORIG`                     |
+| `shippingMethodID`             | `SHIPPING_METHOD`                              |
+| `shippingAddressID`            | `SHIPPING_ADDRESS`                             |
+| `shippingContactPersonID`      | `CONTACT_PERSON_SHIPPING_ADDRESS`              |
+| `description`                  | `ADDITIONAL_NOTES`                             |
+| `releaseNotes`                 | `RELEASE_NOTES`                                |
+| `promisedShipDate`             | `PROMISED_SHIP_DATE_ORIG`                      |
+| `releaseNumber`                | `SO_LINE_RELEASE_NUMBER`                       |
+| `requestedDockDate`            | `REQUESTED_DOCK_DATE_ORIG`                     |
+| `carrierID`                    | `CARRIER`                                      |
+| `carrierAccountNumber`         | `CARRIER_ACCOUNT_NUMBER`                       |
+| `customerReleaseLine`          | `CUST_PO_LINE_RELEASE_NUMBER`                  |
+| `revisedRequestedDockDate`     | `REQUESTED_DOCK_DATE_REVISED`                  |
+| `revisedRequestedShipDate`     | `REQUESTED_SHIP_DATE_REVISED`                  |
+| `revisedRequestedPromisedDate` | `PROMISED_SHIP_DATE_REVISED`                   |
+| `isAgreeToShip`                | `IS_LOCK_ORIG_DATES`                           |
+| `isReadyToShip`                | `IS_REL_QTY_READY`                             |
+| `poReleaseNumber`              | `RELEASE_PO_NUMBER_BPO_ONLY`                   |
+| `intermediateShipmentId`       | `INTERMEDIATE_ADDRESS`                         |
+| `intermediateContactPersonID`  | `CONTACT_PERSON_INTERMEDIATE_SHIPPING_ADDRESS` |
+
+==========================================================================
+table: salesorderdet
+| Column Name                   | Lable Name                                    |
+| ------------------------------| ----------------------------------------------|
+| `qty`                         | `PO_QTY`                                      |
+| `price`                       | `PRICE`                                       |
+| `extendedPrice`               | `EXTENDED_PRICE`                              |
+| `otherCharges`                | `TOT_OTHER_CHARGES_PRICE`                     |
+| `mrpQty`                      | `MR_PQTY`                                     |
+| `shippingQty`                 | `SHIPPING_QTY`                                |
+| `originalPOQty`               | `ORIGINAL_PO_QTY`                             |
+| `materialTentitiveDocDate`    | `CUST_CONSIGNED_MATERIAL_PROMISED_DOCK_DATE`  |
+| `materialDueDate`             | `PURCHASED_MATERIAL_DOCK_DATE`                |
+| `requestedBPOStartDate`       | `REQUESTED_BLANKET_PO_START_DATE`             |
+| `blanketPOEndDate`            | `BLANKET_PO_END_DATE`                         |
+| `partID`                      | `ASSY_ID_PID`                                 |
+| `partType`                    | `PART_TYPE`                                   |
+| `partDescription`             | `PART_DESCRIPTION`                            |
+| `uom`                         | `UOM`                                         |
+| `lineID`                      | `SO_LINE`                                     |
+| `custPOLineNumber`            | `PO_LINE_NUMBER`                              |
+| `custOrgPOLineNumber`         | `ORG_PO_LINE_NUMBER`                          |
+| `refSODetID`                  | `ASSOCIATE_TO_PO`                             |
+| `refRFQGroupID`               | `QUOTE_GROUP`                                 |
+| `refRFQQtyTurnTimeID`         | `QUOTE_QTY_TURN_TIME`                         |
+| `assyQtyTurnTimeText`         | `QUOTE_QTY_TURN_TIME`                         |
+| `quoteNumber`                 | `QUOTE_NUMBER`                                |
+| `quoteFrom`                   | `QUOTE_FROM`                                  |
+| `prcNumberofWeek`             | `BUILD_WEEK`                                  |
+| `tentativeBuild`              | `TENTATIVE_BUILD`                             |
+| `salesOrderDetStatus`         | `LINE_STATUS`                                 |
+| `completeStatusReason`        | `COMPLETE_STATUS_REASON`                      |
+| `soLineShippingStatus`        | `SO_LINE_SHIPPING_STATUS`                     |
+| `isHotJob`                    | `IS_HOT_JOB`                                  |
+| `isCancle`                    | `IS_SO_CANCEL`                                |
+| `isSkipKitCreation`           | `IS_SKIP_KIT_CREATION`                        |
+| `isUnitPriceRevised`          | `IS_SO_REVISED_PRICE`                         |
+| `isCustomerConsign`           | `IS_CUSTOMER_CONSIGN`                         |
+| `isNonInventoryItem`          | `IS_NON_INVENTORY_ITEM`                       |
+| `isDoNotIssueCofc`            | `IS_DO_NOT_ISSUE_COFC`                        |
+| `isShipAsNonInventory`        | `IS_SHIP_AS_NON_INVENTORY`                    |
+| `isLotChargeItem`             | `IS_LOT_CHARGE_ITEM`                          |
+| `isTariffApplicable`          | `IS_TARIFF_APPLICABLE`                        |
+| `remark`                      | `LINE_SHIPPING_COMMENTS`                      |
+| `internalComment`             | `LINE_INTERNAL_NOTES`                         |
+| `releaseLevelComment`         | `COMMENTS`                                    |
+| `woComment`                   | `WO_COMMENT`                                  |
+| `specialNote`                 | `SPECIAL_NOTES`                               |
+| `cancleReason`                | `CANCEL_REASON`                               |
+| `cancleReason`                | `UNDO_CANCELLATION_REASON`                    |
+| `salesCommissionTo`           | `SALES_COMMISSION_TO`                         |
+| `frequency`                   | `CHARGE_FREQUENCY`                            |
+| `frequencyType`               | `CHARGE_FREQUENCY_TYPE`                       |
+| `refSOReleaseLineID`          | `OF_RELEASE_NUMBER`                           |
+
+=============================================================================
+table: salesordermst
+| Column Name                  | Lable Name                      |
+| ---------------------------- | ------------------------------- |
+| `salesOrderNumber`           | `SO_NUMBER`                     |
+| `poNumber`                   | `PO_NUMBER`                     |
+| `poDate`                     | `PO_DATE`                       |
+| `customerID`                 | `CUSTOMER`                      |
+| `contactPersonID`            | `CONTACT_PERSON`                |
+| `billingAddress`             | `BILLING_ADDRESS`               |
+| `shippingAddress`            | `SHIPPING_ADDRESS`              |
+| `shippingMethodID`           | `SHIPPING_METHOD`               |
+| `revision`                   | `SO_REVISION`                   |
+| `shippingComment`            | `SHIPPING_COMMENT`              |
+| `internalComment`            | `INTERNAL_COMMENT`              |
+| `termsID`                    | `TERM`                          |
+| `soDate`                     | `SO_DATE`                       |
+| `revisionChangeNote`         | `REVISION_CHANGE_NOTE`          |
+| `isBlanketPO`                | `IS_BLANKET_PO`                 |
+| `poRevision`                 | `PO_REVISION`                   |
+| `isDeleted`                  | `IS_SO_DELETED`                 |
+| `isRmaPO`                    | `IS_RMA_PO`                     |
+| `isLegacyPO`                 | `IS_LEGACY_PO`                  |
+| `originalPODate`             | `ORIGINAL_PO_DATE`              |
+| `rmaNumber`                  | `RMA_NUMBER`                    |
+| `isDebitedByCustomer`        | `IS_DEBITED_BY_CUSTOMER`        |
+| `orgPONumber`                | `ORG_PO_NUMBER`                 |
+| `isReworkRequired`           | `IS_REWORK_REQUIRED`            |
+| `reworkPONumber`             | `REWORK_PO_NUMBER`              |
+| `blanketPOOption`            | `BLANKET_PO_OPTION`             |
+| `linkToBlanketPO`            | `LINK_TO_BLANKET_PO`            |
+| `workingStatus`              | `SO_WORKING_STATUS`             |
+| `subStatus`                  | `STATUS`                        |
+| `poRevisionDate`             | `PO_REVISION_DATE`              |
+| `salesCommissionTo`          | `SALES_COMMISSION_TO`           |
+| `carrierID`                  | `CARRIER`                       |
+| `carrierAccountNumber`       | `CARRIER_ACCOUNT_NUMBER`        |
+| `freeOnBoardId`              | `FREE_ON_BOARD`                 |
+| `serialNumber`               | `SERIAL_NUMBER`                 |
+| `totalAmount`                | `TOTAL_AMOUNT`                  |
+| `lineTotalAmount`            | `LINE_TOTAL_AMOUNT`             |
+| `lineMiscCharge`             | `LINE_MISC_CHARGE`              |
+| `billingContactPerson`       | `BILLING_CONTACT_PERSON`        |
+| `shippingContactPerson`      | `SHIPPING_CONTACT_PERSON`       |
+| `intermediateAddress`        | `INTERMEDIATE_ADDRESS`          |
+| `intermediateContactPerson`  | `INTERMEDIATE_CONTACT_PERSON`   |
+| `soShippingStatus`           | `SO_SHIPPING_STATUS`            |
+
+===================================================================
+table: salesorder_plan_detailsmst
+| Column Name              | Lable Name                               |
+| ------------------------ | ---------------------------------------- |
+| `poQty`                  | `PROMISED_SHIP_QTY_FROM_PO`              |
+| `poDueDate`              | `PROMISED_SHIP_DATE`                     |
+| `materialDockDate`       | `MATERIAL_DOCK_DATE`                     |
+| `kitReleaseQty`          | `PLANNED_KIT_AND_BUILD_QTY`              |
+| `mfrLeadTime`            | `BUILD_LEAD_TIME_BUSINESS DAYS`          |
+| `kitReleaseDate`         | `PLANNED_KIT RELEASE_DATE`               |
+| `plannKitNumber`         | `PLANNED_KIT_NUMBER`                     |
+| `actualKitReleaseDate`   | `ACTUAL_KIT_RELEASE_DATE`                |
+| `releasedBy`             | `RELEASED_BY`                            |
+| `releaseTimeFeasibility` | `FEASIBILITY_AT_THE_TIME_OF_THE_RELEASE` |
+| `kitStatus`              | `KIT_STATUS`                             |
+| `woID`                   | `WO_NUMBER`                              |
+| `releasedNote`           | `RELEASED_COMMENT`                       |
+| `releaseKitNumber`       | `KIT_RELEASE_NUMBER`                     |
+| `kitReturnStatus`        | `KIT_RETURN_STATUS`                      |
+| `kitReturnDate`          | `KIT_RETURN_DATE`                        |
+
